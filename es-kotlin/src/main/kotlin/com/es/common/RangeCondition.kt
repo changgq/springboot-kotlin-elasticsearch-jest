@@ -1,44 +1,48 @@
 package com.es.common
 
-import org.springframework.util.StringUtils
-import java.text.SimpleDateFormat
+import com.es.date2string
 import java.util.*
 
-class RangeCondition(val type: Type, val conditionName: String, val gteValue: String, val lteValue: String, val timeZone: String = "+08:00") {
+
+class RangeCondition(val type: Type = Type.DATE, choice: String = "day", val conditionName: String = "date",
+                     var gteValue: String = "", var lteValue: String = "", val timeZone: String = "+08:00") {
+    init {
+        when (choice) {
+            "week" -> { // 当前周
+                gteValue = TimeUtils.currentWeekFirst().date2string()
+                lteValue = TimeUtils.currentWeekLast().date2string()
+            }
+            "month" -> { // 最近一月
+                gteValue = TimeUtils.currentMonthFirst().date2string()
+                lteValue = TimeUtils.currentMonthLast().date2string()
+            }
+            "3months" -> { // 最近三个月
+                gteValue = TimeUtils.last3monthsFirst().date2string()
+                lteValue = Date().date2string()
+            }
+            "6months" -> { // 最近六个月
+                gteValue = TimeUtils.last6monthsFirst().date2string()
+                lteValue = Date().date2string()
+            }
+            "12months" -> { // 最近一年
+                gteValue = TimeUtils.last12monthsFirst().date2string()
+                lteValue = Date().date2string()
+            }
+            "year" -> { // 当前整年
+                gteValue = TimeUtils.currentYearFirst().date2string()
+                lteValue = TimeUtils.currentYearLast().date2string()
+            }
+            else -> {
+                gteValue = Date().date2string()
+                lteValue = Date().date2string()
+            }
+        }
+    }
+
     enum class Type {
         DATE, NUMBER, STRING
     }
-
-    fun selfCheck(): Boolean {
-        if (null == type) {
-            return false
-        }
-        if (StringUtils.isEmpty(conditionName)) {
-            return false
-        }
-        if (StringUtils.isEmpty(gteValue)) {
-            return false
-        }
-        if (StringUtils.isEmpty(lteValue)) {
-            return false
-        }
-        if (type == Type.DATE) {
-            if (!(isRightDateStr(gteValue, "yyyy-MM-dd") && isRightDateStr(lteValue, "yyyy-MM-dd"))) {
-                return false
-            }
-        }
-        return true
-    }
 }
 
-fun isRightDateStr(dateStr: String, datePattern: String): Boolean {
-    val dateFormat = SimpleDateFormat(datePattern)
-    try {
-        dateFormat.isLenient = false
-        val date: Date = dateFormat.parse(dateStr)
-        val newDateStr: String = dateFormat.format(date)
-        return dateStr.equals(newDateStr)
-    } catch (e: Exception) {
-        return false
-    }
-}
+
+
