@@ -40,6 +40,9 @@ dependencies {
     compile("com.squareup.okhttp3:okhttp:3.10.0")
     // https://mvnrepository.com/artifact/org.apache.poi/poi
     compile("org.apache.poi:poi:3.17")
+    // https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml
+    compile group: 'org.apache.poi', name: 'poi-ooxml', version: '3.17'
+
     compile 'org.elasticsearch.client:elasticsearch-rest-high-level-client:6.2.4'
 }
 
