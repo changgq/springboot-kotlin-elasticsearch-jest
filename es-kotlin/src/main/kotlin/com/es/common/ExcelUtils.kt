@@ -1,8 +1,8 @@
 package com.es.common
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
+import org.apache.poi.ss.usermodel.Workbook
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
 
 /**
@@ -14,25 +14,35 @@ import java.io.File
  */
 object ExcelUtils {
 
-    fun genExcel(headers: Array<String>, datas: List<Array<String>>, startIndex: Int = 0) {
-        val workbook = HSSFWorkbook()
-        val sheet = workbook.createSheet()
-        for (j in datas.size.downTo(1)) {
+    enum class ExcelType {
+        XLS, XLSX
+    }
+
+    fun genExcelAddContent(wb: Workbook, excelFile: File, headers: Array<String>, datas: List<Array<String>>, startIndex: Int = 0) {
+        val sheet = wb.createSheet()
+        for (j in startIndex.rangeTo(datas.size - 1)) {
             val row = sheet.createRow(j)
-            for (k in headers.size.until(0)) {
+            for (k in 0.rangeTo(headers.size - 1)) {
                 row.createCell(k).setCellValue(datas[j][k])
             }
         }
-        workbook.write(File("d:\\a.xlsx"))
-        workbook.close()
+        wb.write(excelFile.outputStream())
     }
-}
 
-fun main(args: Array<String>) {
-    val headers = Array<String>(26) { i -> ('a' + i).toString() }
-    val datas = List<Array<String>>(20, { y ->
-        Array<String>(headers.size, { x -> ("X" + y + x) })
-    })
-    println(GsonBuilder().setPrettyPrinting().create().toJson(datas))
-    ExcelUtils.genExcel(headers, datas, 0)
+    fun genExcel(excelType: ExcelType, excelFile: File, headers: Array<String>, datas: List<Array<String>>, startIndex: Int = 0) {
+        val wb = when (excelType) {
+            ExcelType.XLS -> HSSFWorkbook()
+            ExcelType.XLSX -> XSSFWorkbook()
+            else -> XSSFWorkbook()
+        }
+        val sheet = wb.createSheet()
+        for (j in startIndex.rangeTo(datas.size - 1)) {
+            val row = sheet.createRow(j)
+            for (k in 0.rangeTo(headers.size - 1)) {
+                row.createCell(k).setCellValue(datas[j][k])
+            }
+        }
+        wb.write(excelFile.outputStream())
+        wb.close()
+    }
 }
