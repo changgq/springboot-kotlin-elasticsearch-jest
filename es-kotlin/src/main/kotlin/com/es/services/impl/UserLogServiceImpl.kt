@@ -37,7 +37,7 @@ class UserLogServiceImpl(val highLevelClient: RestHighLevelClient) : UserLogServ
         var echartsData = EchartsData()
         val elapsed_time_ = measureTimeMillis {
             val searchCond = SearchCondition(listOf(rangeCondition), getExactCond())
-            val buckets = BaseDao.getListOfGroupBy(highLevelClient, INDICES_NAME, searchCond, "doc['user_name.keyword'].values[0]")
+            val buckets = BaseDao.getListOfGroupBy(highLevelClient, INDICES_NAME, searchCond, "doc['user_name.keyword'].values[0]", topCount, false)
             echartsData = EchartsData(xAxis_String = Array<String>(buckets.size, { x -> buckets.get(x).keyAsString }),
                     yAxis_Integer = Array<Int>(buckets.size, { x -> buckets.get(x).docCount.toInt() }))
         }
@@ -159,7 +159,7 @@ class UserLogServiceImpl(val highLevelClient: RestHighLevelClient) : UserLogServ
             val searchHits = searchResponse.getHits().getHits()
             searchPager.total = searchResponse.hits.totalHits
             searchPager.data = List<Map<String, Any?>>(searchHits.size, { x ->
-                val s = searchHits.get(x).getSource()
+                val s = searchHits.get(x).sourceAsMap
                 mapOf(
                         "userId" to s.get(ModelContants.PARAMS_MAPS.get("userId")),
                         "userGroup" to s.get(ModelContants.PARAMS_MAPS.get("userGroup")),

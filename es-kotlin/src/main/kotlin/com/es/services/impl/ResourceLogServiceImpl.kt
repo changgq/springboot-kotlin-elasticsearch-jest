@@ -11,6 +11,7 @@ import org.elasticsearch.client.RestHighLevelClient
 import org.elasticsearch.script.Script
 import org.elasticsearch.search.aggregations.AggregationBuilder
 import org.elasticsearch.search.aggregations.AggregationBuilders
+import org.elasticsearch.search.aggregations.BucketOrder
 import org.elasticsearch.search.aggregations.bucket.terms.Terms
 import org.elasticsearch.search.aggregations.metrics.max.Max
 import org.elasticsearch.search.aggregations.metrics.min.Min
@@ -131,7 +132,7 @@ class ResourceLogServiceImpl(val highLevelClient: RestHighLevelClient) : Resourc
         val elapsed_time_ = measureTimeMillis {
             val qb = BaseDao.queryBuilders(searchCondition.exactList, searchCondition.dimList, searchCondition.scopeList)
             val subAgg = AggregationBuilders.terms("_groupBy").field(ModelContants.PARAMS_MAPS.get("uri.keyword"))
-                    .order(Terms.Order.aggregation("_totalTraffic_sum_by", false)).size(10000)
+                    .order(BucketOrder.aggregation("_totalTraffic_sum_by", false)).size(10000)
             subAgg.subAggregation(AggregationBuilders.max("_date_max_by").field(ModelContants.PARAMS_MAPS.get("date")).format("yyyy-MM-dd HH:mm:ss"))
             subAgg.subAggregation(AggregationBuilders.sum("_totalTraffic_sum_by").field(ModelContants.PARAMS_MAPS.get("totalTraffic")))
             subAgg.subAggregation(AggregationBuilders.terms("_resource_name").field(ModelContants.PARAMS_MAPS.get("resourceName.keyword")))
@@ -291,7 +292,7 @@ class ResourceLogServiceImpl(val highLevelClient: RestHighLevelClient) : Resourc
         return AggregationBuilders.terms("distinct")
                 .script(Script("doc['user_name.keyword'].value + '  ' + doc['user_group.keyword'].value")).size(topCount)
                 .subAggregation(AggregationBuilders.sum("totalTraffic").field("long_total_traffic"))
-                .order(Terms.Order.aggregation("totalTraffic", false))
+                .order(BucketOrder.aggregation("totalTraffic", false))
     }
 
     private fun groupByUserNameAndUserGroupDetialAggregation(topCount: Int = 10): AggregationBuilder {
@@ -302,7 +303,7 @@ class ResourceLogServiceImpl(val highLevelClient: RestHighLevelClient) : Resourc
                 .subAggregation(AggregationBuilders.sum("totalDownloadTraffic").field("long_downlink_traffic"))
                 .subAggregation(AggregationBuilders.sum("totalUploadTraffic").field("long_uplink_traffic"))
                 .subAggregation(AggregationBuilders.sum("totalTraffic").field("long_total_traffic"))
-                .order(Terms.Order.aggregation("totalTraffic", false))
+                .order(BucketOrder.aggregation("totalTraffic", false))
     }
 
     private fun groupByResourceNameAndUriDetailAggregation(topCount: Int = 10): AggregationBuilder {
@@ -313,20 +314,20 @@ class ResourceLogServiceImpl(val highLevelClient: RestHighLevelClient) : Resourc
                 .subAggregation(AggregationBuilders.sum("totalDownloadTraffic").field("long_downlink_traffic"))
                 .subAggregation(AggregationBuilders.sum("totalUploadTraffic").field("long_uplink_traffic"))
                 .subAggregation(AggregationBuilders.sum("totalTraffic").field("long_total_traffic"))
-                .order(Terms.Order.aggregation("totalTraffic", false))
+                .order(BucketOrder.aggregation("totalTraffic", false))
     }
 
     private fun groupByResourceNameAggregation(topCount: Int): AggregationBuilder {
         return AggregationBuilders.terms("distinct")
                 .script(Script("doc['resource_name.keyword'].value")).size(topCount)
                 .subAggregation(AggregationBuilders.sum("totalTraffic").field(ModelContants.PARAMS_MAPS.get("totalTraffic")!!))
-                .order(Terms.Order.aggregation("totalTraffic", false))
+                .order(BucketOrder.aggregation("totalTraffic", false))
     }
 
     private fun groupByUserGroupAggregation(topCount: Int): AggregationBuilder {
         return AggregationBuilders.terms("distinct")
                 .script(Script("doc['user_group.keyword'].value")).size(topCount)
                 .subAggregation(AggregationBuilders.sum("totalTraffic").field(ModelContants.PARAMS_MAPS.get("totalTraffic")!!))
-                .order(Terms.Order.aggregation("totalTraffic", false))
+                .order(BucketOrder.aggregation("totalTraffic", false))
     }
 }

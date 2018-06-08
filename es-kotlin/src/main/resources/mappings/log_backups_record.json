@@ -1,0 +1,42 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1
+    }
+  },
+  "mappings": {
+    "LOG_BACKUPS_RECORD": {
+      "_source": {
+        "enabled": true
+      },
+      "properties": {
+        "id": {
+          "type": "keyword"
+        },
+        "logType": {
+          "type": "keyword"
+        },
+        "backupsDate": {
+          "type": "date",
+          "format": "yyyy-MM-dd HH:mm:ss"
+        },
+        "backupTimes": {
+          "type": "long"
+        },
+        "fileName": {
+          "type": "keyword"
+        },
+        "filePath": {
+          "type": "keyword"
+        },
+        "fileSize": {
+          "type": "long"
+        },
+        "backupStatus": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

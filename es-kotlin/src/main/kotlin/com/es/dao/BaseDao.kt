@@ -6,19 +6,17 @@ import com.es.common.RangeCondition
 import com.es.common.SearchCondition
 import com.es.model.ModelContants
 import org.elasticsearch.action.search.SearchRequest
-import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.action.search.SearchType
 import org.elasticsearch.client.RestHighLevelClient
-import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.index.query.BoolQueryBuilder
 import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.script.Script
 import org.elasticsearch.search.aggregations.AggregationBuilder
 import org.elasticsearch.search.aggregations.AggregationBuilders
+import org.elasticsearch.search.aggregations.BucketOrder
 import org.elasticsearch.search.aggregations.bucket.terms.Terms
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder
 import org.elasticsearch.search.aggregations.metrics.cardinality.Cardinality
-import org.elasticsearch.search.aggregations.metrics.cardinality.CardinalityAggregationBuilder
 import org.elasticsearch.search.aggregations.metrics.sum.Sum
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.slf4j.Logger
@@ -66,10 +64,10 @@ object BaseDao {
 
     fun aggBuilders(groupBy: String, topCount: Int, sortIsAsc: Boolean, absQueryCons: Map<String, String>?): TermsAggregationBuilder {
         val ab = AggregationBuilders.terms("_groupBy").field(ModelContants.PARAMS_MAPS.get(groupBy))
-                .order(Terms.Order.term(sortIsAsc)).size(if (topCount == 0) MAX_INT_VALUE else topCount)
+                .order(BucketOrder.aggregation("_groupBy", sortIsAsc)).size(if (topCount == 0) MAX_INT_VALUE else topCount)
         absQueryCons?.forEach { m ->
             val aggName = "_" + m.value + "_by"
-            ab.order(Terms.Order.aggregation(aggName, sortIsAsc))
+            ab.order(BucketOrder.aggregation(aggName, sortIsAsc))
             when (m.value) {
                 "max" -> ab.subAggregation(AggregationBuilders.max(aggName).field(ModelContants.PARAMS_MAPS.get(m.key)))
                 "min" -> ab.subAggregation(AggregationBuilders.max(aggName).field(ModelContants.PARAMS_MAPS.get(m.key)))
@@ -110,7 +108,7 @@ object BaseDao {
 
     fun getListOfGroupBy(highLevelClient: RestHighLevelClient, indicesName: String, sc: SearchCondition, scripts: String, topCount: Int = 0, termSort: Boolean = false): List<Terms.Bucket> {
         val size = if (topCount == 0) sc.currentPage * sc.pageSize else topCount
-        val aggs = AggregationBuilders.terms("distinct").script(Script(scripts)).size(size).order(Terms.Order.term(termSort))
+        val aggs = AggregationBuilders.terms("distinct").script(Script(scripts)).size(size).order(BucketOrder.aggregation("distinct", termSort))
         return highLevelClient.search(createSearchRequest(indicesName, sc, aggs)).aggregations.get<Terms>("distinct").buckets
     }
 

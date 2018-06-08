@@ -5,13 +5,23 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.scheduling.annotation.EnableScheduling
 import java.text.SimpleDateFormat
 import java.util.*
+import org.springframework.boot.autoconfigure.http.HttpMessageConverters
+import org.springframework.context.annotation.Bean
+import org.springframework.http.converter.json.GsonHttpMessageConverter
+
 
 @SpringBootApplication
 @EnableScheduling
-open class Application
+open class Application {
+    @Bean
+    open fun gsonHttpMessageConverters(): HttpMessageConverters {
+        return HttpMessageConverters(GsonHttpMessageConverter())
+    }
+}
 
 fun main(args: Array<String>) {
-    SpringApplication.run(Application::class.java, *args)
+    val app = SpringApplication(Application::class.java)
+    app.run(*args)
     println("System is Running!")
 }
 

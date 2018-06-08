@@ -1,0 +1,33 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1
+    }
+  },
+  "mappings": {
+    "LOG_DELETE_RECORD": {
+      "_source": {
+        "enabled": true
+      },
+      "properties": {
+        "id": {
+          "type": "keyword"
+        },
+        "logType": {
+          "type": "keyword"
+        },
+        "indexName": {
+          "type": "keyword"
+        },
+        "deleteDate": {
+          "type": "date",
+          "format": "yyyy-MM-dd HH:mm:ss"
+        },
+        "deleteStatus": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

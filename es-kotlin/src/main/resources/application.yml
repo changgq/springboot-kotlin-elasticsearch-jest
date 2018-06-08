@@ -1,12 +1,13 @@
 server:
   port: 80
   servlet:
-    path: /api
-  rest-api:
-    isLogPrintable: true
+    path: /eslogs/api
 
 spring:
   elasticsearch:
     jest:
-      uris: http://192.168.32.189:9200
-#      uris: http://49.4.9.225:9200
+#      uris: http://192.168.32.189:9200
+      uris: http://49.4.9.225:9200
+
+system:
+  logConfigPath: D:\\logJson.config
