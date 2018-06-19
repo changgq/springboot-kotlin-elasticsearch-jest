@@ -1,0 +1,53 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1
+    }
+  },
+  "mappings": {
+    "LOG_SETTING": {
+      "_source": {
+        "enabled": true
+      },
+      "properties": {
+        "id": {
+          "type": "keyword"
+        },
+        "useThirdDB": {
+          "type": "boolean"
+        },
+        "configType": {
+          "type": "keyword"
+        },
+        "startSaveTime": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "dayRate": {
+          "type": "long"
+        },
+        "countRate": {
+          "type": "long"
+        },
+        "lastDeleteDate": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "lastBackupDate": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "startStatus": {
+          "type": "boolean"
+        },
+        "logTypes": {
+          "type": "keyword"
+        },
+        "logLevels": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}

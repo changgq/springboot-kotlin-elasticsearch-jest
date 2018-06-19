@@ -1,3 +1,5 @@
 rootProject.name = 'springboot-kotlin-elasticsearch-jest'
 include 'es-kotlin'
 include 'es-vue'
+include 'el'
+
