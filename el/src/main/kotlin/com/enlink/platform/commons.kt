@@ -1,10 +1,38 @@
 package com.enlink.platform
 
+import org.apache.poi.hssf.usermodel.HSSFWorkbook
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import java.io.File
+
 data class CommonResponse(val data: Any?,
                           val extend: Any?,
                           val response_time: Long = 0,
                           val status_code: Int = HttpStatus.OK,
                           val message: String = HttpStatus.responses.get(status_code)!!)
+
+object ExcelUtils {
+    enum class ExcelType {
+        XLS, XLSX
+    }
+
+    fun genExcel(excelType: ExcelType, filePath: String, headers: Array<String>, datas: List<Array<String>>, startIndex: Int = 0, sheetName: String = "sheet1") {
+        val f = File(filePath)
+        val wb = when (excelType) {
+            ExcelType.XLS -> if (f.exists()) HSSFWorkbook(f.inputStream()) else HSSFWorkbook()
+            else -> if (f.exists()) XSSFWorkbook(f.inputStream()) else XSSFWorkbook()
+        }
+        var sheet = wb.getSheet(sheetName)
+        if (null == sheet) sheet = wb.createSheet(sheetName)
+        for (j in 0.rangeTo(datas.size - 1)) {
+            val row = sheet.createRow(startIndex + j)
+            for (k in 0.rangeTo(headers.size - 1)) {
+                row.createCell(k).setCellValue(datas[j][k])
+            }
+        }
+        wb.write(f.outputStream())
+        wb.close()
+    }
+}
 
 object HttpStatus {
     var OK = 200
