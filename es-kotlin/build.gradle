@@ -1,15 +1,17 @@
 buildscript {
-    ext.kotlin_version = '1.2.41'
-    ext.springboot_version = '2.0.1.RELEASE'
-    ext.elasticsearch_version = '6.2.4'
+    ext.vKtolin = '1.2.41'
+    ext.vSpringboot = '2.0.1.RELEASE'
+    ext.vElasticsearch = '6.2.4'
+    ext.vGson = '2.8.5'
+    ext.vGuava = '25.1-jre'
 
     repositories {
         mavenCentral()
         maven { url "http://repo.spring.io/plugins-release/" }
     }
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:$springboot_version")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$vKtolin")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:$vSpringboot")
     }
 }
 
@@ -29,21 +31,24 @@ repositories {
 }
 
 dependencies {
-    compile("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version")
+    compile("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$vKtolin")
     compile("org.jetbrains.kotlinx:kotlinx-coroutines-core:0.18")
     compile("com.fasterxml.jackson.module:jackson-module-kotlin")
     compile("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     compile("org.springframework.boot:spring-boot-starter-web")
     compile("org.springframework.boot:spring-boot-devtools")
     compile("org.springframework.boot:spring-boot-configuration-processor")
-    compile("io.searchbox:jest")
-    compile("net.java.dev.jna:jna")
+//    compile("io.searchbox:jest")
+//    compile("net.java.dev.jna:jna")
+
+    compile("com.google.code.gson:gson:$vGson")
+//    compile("com.google.guava:guava:$vGuava")
 
     compile("com.squareup.okhttp3:okhttp:3.10.0")
     compile("org.apache.poi:poi:3.17")
     compile("org.apache.poi:poi-ooxml:3.17")
-    compile("org.elasticsearch.client:elasticsearch-rest-high-level-client:$elasticsearch_version")
-    compile("org.elasticsearch:elasticsearch:$elasticsearch_version")
+    compile("org.elasticsearch.client:elasticsearch-rest-high-level-client:$vElasticsearch")
+    compile("org.elasticsearch:elasticsearch:$vElasticsearch")
 }
 
 compileKotlin {
