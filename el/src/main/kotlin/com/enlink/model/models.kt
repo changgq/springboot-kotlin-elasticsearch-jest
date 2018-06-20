@@ -41,6 +41,9 @@ data class LoginLog(val deviceType: String, val deviceOS: String, val clientInfo
                     val userGroup: String, val userName: String, val userAuth: String, val certificateServer: String,
                     val linkInterface: String, val macAddress: String, val ipAddress: String)
 
+/**
+ * 功能描述: 日志设置信息
+ */
 class LogSetting(var id: String = "1",
                  var useThirdDB: Boolean = false,                           // 是否启用第三方数据库
                  var configType: String = ConfigType.DATE.name,             // 日志清理类型，按日期、按数量
