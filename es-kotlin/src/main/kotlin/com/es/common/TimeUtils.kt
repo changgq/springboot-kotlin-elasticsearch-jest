@@ -191,3 +191,31 @@ operator fun Date.compareTo(compareDate: Date): Int {
 fun Date.stringFormat(formatType: String): String {
     return SimpleDateFormat(formatType).format(this)
 }
+
+inline fun Date.date2string_point(): String {
+    return SimpleDateFormat("yyyy.MM.dd").format(this)
+}
+
+inline fun Date.date2string(): String {
+    return SimpleDateFormat("yyyy-MM-dd").format(this)
+}
+
+inline fun Date.datetime2string(): String {
+    return SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(this)
+}
+
+inline fun String.string2date(): Date {
+    return SimpleDateFormat("yyyy-MM-dd").parse(this)
+}
+
+inline fun String.string2datetime(): Date {
+    return SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(this)
+}
+
+inline fun String.checkIsDate(): Boolean {
+    try {
+        return this.string2date().date2string() == this
+    } catch (e: Exception) {
+        return false
+    }
+}

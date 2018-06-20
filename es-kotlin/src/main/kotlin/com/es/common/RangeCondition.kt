@@ -1,10 +1,9 @@
 package com.es.common
 
-import com.es.date2string
 import java.util.*
 
 
-class RangeCondition(val type: Type = Type.DATE, choice: String = "day", val conditionName: String = "date",
+class RangeCondition(val type: Type = Type.DATE, var choice: String = "day", val conditionName: String = "date",
                      var gteValue: String = "", var lteValue: String = "", val timeZone: String = "+08:00") {
     init {
         when (choice) {

@@ -30,5 +30,4 @@ class SystemLogAction(highLevelClient: RestHighLevelClient) : BaseAction(highLev
     fun getFlowList(): ApiResponse {
         return systemLogService.getNetFlowList()
     }
-
 }

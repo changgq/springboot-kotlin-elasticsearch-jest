@@ -1,9 +1,6 @@
 package com.es.services.impl
 
-import com.es.common.ApiResponse
-import com.es.common.QueryCondition
-import com.es.common.RangeCondition
-import com.es.common.SearchCondition
+import com.es.common.*
 import com.es.dao.BaseDao
 import com.es.echarts.EchartsData
 import com.es.model.ModelContants
@@ -14,9 +11,11 @@ import org.elasticsearch.client.RestHighLevelClient
 import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.script.Script
 import org.elasticsearch.search.aggregations.AggregationBuilders
+import org.elasticsearch.search.aggregations.BucketOrder
 import org.elasticsearch.search.aggregations.bucket.terms.Terms
 import org.elasticsearch.search.aggregations.metrics.max.Max
 import org.elasticsearch.search.aggregations.metrics.min.Min
+import org.elasticsearch.search.aggregations.metrics.sum.Sum
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.elasticsearch.search.sort.SortOrder
 import org.springframework.stereotype.Service
@@ -30,49 +29,63 @@ import kotlin.system.measureTimeMillis
  * @description
  */
 @Service
-class UserLogServiceImpl(val highLevelClient: RestHighLevelClient) : UserLogService {
+class UserLogServiceImpl(val client: RestHighLevelClient) : UserLogService {
     val INDICES_NAME = "user"
 
     override fun getUserLoginRank(rangeCondition: RangeCondition, topCount: Int): ApiResponse {
-        var echartsData = EchartsData()
+        var dataMap = mapOf<String, Any>()
         val elapsed_time_ = measureTimeMillis {
-            val searchCond = SearchCondition(listOf(rangeCondition), getExactCond())
-            val buckets = BaseDao.getListOfGroupBy(highLevelClient, INDICES_NAME, searchCond, "doc['user_name.keyword'].values[0]", topCount, false)
-            echartsData = EchartsData(xAxis_String = Array<String>(buckets.size, { x -> buckets.get(x).keyAsString }),
-                    yAxis_Integer = Array<Int>(buckets.size, { x -> buckets.get(x).docCount.toInt() }))
+            val qb = BaseDao.queryBuildersOld(getExactCond2(), emptyMap(), listOf(rangeCondition))
+            val aggs = AggregationBuilders.terms("distinct")
+                    .script(Script("doc['user_name.keyword'].values[0]")).size(topCount)
+                    .subAggregation(AggregationBuilders.count("_key").field("user_name.keyword"))
+                    .order(BucketOrder.aggregation("_key", false))
+            val searchReq = SearchRequest().indices(INDICES_NAME)
+                    .source(SearchSourceBuilder().fetchSource(false).query(qb).aggregation(aggs))
+            val buckets = client.search(searchReq).aggregations.get<Terms>("distinct").buckets
+            // 将查询结果倒叙排列，前段需要的数据结构
+            val xAxis = Array(buckets.size, { x -> buckets[x].keyAsString })
+            val yAxis = Array(buckets.size, { x -> buckets[x].docCount.toInt() })
+            dataMap = mapOf("xAxis" to xAxis, "yAxis" to yAxis)
         }
-        return ApiResponse(echartsData, elapsed_time_)
+        return ApiResponse(dataMap, null, elapsed_time_)
     }
 
     override fun getUserLoginRankAndFlow(rangeCondition: RangeCondition, topCount: Int): ApiResponse {
-        val apiResponse = getUserLoginRank(rangeCondition, topCount)
-        var echartsData = EchartsData()
+        val userLoginCounts = getUserLoginRank(rangeCondition, topCount)
+        var dataMap = mapOf<String, Any>()
         val elapsed_time_ = measureTimeMillis {
-            val ue: EchartsData = apiResponse.data as EchartsData
-            val yAxisString = Array<String>(ue.xAxis_String.size, { it -> it.toString() })
-            var index = 0
-            ue.xAxis_String.forEach { it ->
-                val qCon = QueryCondition("user_name.keyword", it, QueryCondition.QueryType.EXACT)
-                val searchCond = SearchCondition(listOf(rangeCondition), listOf(qCon))
-                val sumValue = BaseDao.getValueBySum(highLevelClient, "res", searchCond, "doc['long_total_traffic'].value")
-                yAxisString.set(index++, sumValue.toString())
-            }
-            // 封装图表数据对象
-            echartsData = EchartsData(xAxis_String = ue.xAxis_String, yAxis_Integer = ue.yAxis_Integer, yAxis_String = yAxisString)
+            val uMap = userLoginCounts.data as Map<String, Any>
+            val xAxis: Array<String> = uMap.get("xAxis") as Array<String>
+            val xAxis_str = Array<String>(xAxis.size, { x ->
+                val map = mapOf<String, Array<String>>("userName.keyword" to arrayOf(xAxis.get(x)))
+                val qb = BaseDao.queryBuildersOld(map, emptyMap(), listOf(rangeCondition))
+                val aggs = AggregationBuilders.sum("_key").field("long_total_traffic")
+                val total = client.search(SearchRequest().indices(LogFields.LOG_INDEX_MAP.get("resLog"))
+                        .source(SearchSourceBuilder().fetchSource(false).query(qb).aggregation(aggs)))
+                        .aggregations.get<Sum>("_key").valueAsString
+                total
+            })
+            dataMap = mapOf("xAxis_flow" to xAxis_str, "xAxis" to xAxis, "yAxis" to uMap.get("yAxis")!!)
         }
-        return ApiResponse(echartsData, elapsed_time_)
+        return ApiResponse(dataMap, null, elapsed_time_)
     }
 
     override fun getTerminalPie(rangeCondition: RangeCondition): ApiResponse {
-        var echartsData = EchartsData()
+        var map = mapOf<String, Any>()
         val elapsed_time_ = measureTimeMillis {
-            val searchCond = SearchCondition(listOf(rangeCondition), getExactCond())
-            val buckets = BaseDao.getListOfGroupBy(highLevelClient, INDICES_NAME, searchCond, "doc['device_os.keyword'].values[0]", Int.MAX_VALUE)
-            // 封装图表数据对象
-            echartsData = EchartsData(xAxis_String = Array<String>(buckets.size, { x -> buckets.get(x).keyAsString }),
-                    yAxis_Integer = Array<Int>(buckets.size, { x -> buckets.get(x).docCount.toInt() }))
+            val qb = BaseDao.queryBuildersOld(getExactCond2(), emptyMap(), listOf(rangeCondition))
+            val aggs = AggregationBuilders.terms("deviceOs")
+                    .field("device_os.keyword").size(Int.MAX_VALUE)
+                    .subAggregation(AggregationBuilders.count("_key").field("device_os.keyword"))
+                    .order(BucketOrder.aggregation("_key", false))
+            val searchReq = SearchRequest(INDICES_NAME)
+                    .source(SearchSourceBuilder().query(qb).aggregation(aggs).fetchSource(false))
+            val resp = client.search(searchReq)
+            val buckets = resp.aggregations.get<Terms>("deviceOs").buckets
+            map = buckets.map { it.keyAsString to it.docCount.toInt() }.toMap()
         }
-        return ApiResponse(echartsData, elapsed_time_)
+        return ApiResponse(map, null, elapsed_time_)
     }
 
     override fun getUserLoginCount(condition: SearchCondition, userName: String): ApiResponse {
@@ -93,19 +106,20 @@ class UserLogServiceImpl(val highLevelClient: RestHighLevelClient) : UserLogServ
 
             println(searchRequest.toString())
 
-            val searchResponse = highLevelClient.search(searchRequest)
+            val searchResponse = client.search(searchRequest)
             loginCount = searchResponse.hits.totalHits
         }
         return ApiResponse(loginCount, elapsed_time_)
     }
 
-    override fun getUserLoginGroupStatics(condition: SearchCondition): ApiResponse {
-        val total = getUserLoginTotal(condition.rangeQueryCons!!.get(0))
+    override fun getUserLoginGroupStatics(condition: Condition): ApiResponse {
+        val rangeCondition = if (condition.rangeConditionList.size > 0) condition.rangeConditionList.get(0) else RangeCondition()
+        val total = getUserLoginTotal(rangeCondition)
         var searchPager = BasePage(condition.currentPage, condition.pageSize, "", total)
         var loginCount = 0L
         var data: List<Map<String, Any>> = emptyList()
         val elapsed_time_ = measureTimeMillis {
-            val bq = BaseDao.queryBuilders(getExactCond(), condition.dimList, condition.scopeList)
+            val bq = BaseDao.queryBuildersOld(getExactCond2(), condition.ambiguousConditions, condition.rangeConditionList)
             val startIndex = (condition.currentPage - 1) * condition.pageSize
             println("startIndex $startIndex")
             val endIndex = condition.currentPage * condition.pageSize
@@ -122,7 +136,7 @@ class UserLogServiceImpl(val highLevelClient: RestHighLevelClient) : UserLogServ
 
             println(searchRequest.toString())
 
-            val searchResponse = highLevelClient.search(searchRequest)
+            val searchResponse = client.search(searchRequest)
 
             val terms: Terms = searchResponse.getAggregations().get("distinct")
             val buckets = terms.buckets
@@ -155,9 +169,9 @@ class UserLogServiceImpl(val highLevelClient: RestHighLevelClient) : UserLogServ
             val searchRequest = SearchRequest().indices(INDICES_NAME).source(SearchSourceBuilder.searchSource()
                     .from(startIndex).size(endIndex).query(qb).sort("log_timestamp.keyword", SortOrder.DESC))
 
-            val searchResponse = highLevelClient.search(searchRequest)
+            val searchResponse = client.search(searchRequest)
             val searchHits = searchResponse.getHits().getHits()
-            searchPager.total = searchResponse.hits.totalHits
+            searchPager.totalHits = searchResponse.hits.totalHits
             searchPager.data = List<Map<String, Any?>>(searchHits.size, { x ->
                 val s = searchHits.get(x).sourceAsMap
                 mapOf(
@@ -183,18 +197,18 @@ class UserLogServiceImpl(val highLevelClient: RestHighLevelClient) : UserLogServ
 
     fun getUserLoginTotalByUsername(rangeCondition: RangeCondition, userName: String): Long {
         val qCon3 = QueryCondition("user_name.keyword", userName, QueryCondition.QueryType.EXACT)
-        return BaseDao.getListCountOfGroupBy(highLevelClient, INDICES_NAME,
+        return BaseDao.getListCountOfGroupBy(client, INDICES_NAME,
                 SearchCondition(listOf(rangeCondition), getExactCond().plus(qCon3)),
                 "doc['user_name.keyword'].values[0] + '  ' + doc['user_group.keyword'].values[0]")
     }
 
     fun getUserLoginTotal(rangeCondition: RangeCondition): Long {
-        return BaseDao.getListCountOfGroupBy(highLevelClient, INDICES_NAME, SearchCondition(listOf(rangeCondition), getExactCond()),
+        return BaseDao.getListCountOfGroupBy(client, INDICES_NAME, SearchCondition(listOf(rangeCondition), getExactCond()),
                 "doc['user_name.keyword'].values[0] + '  ' + doc['user_group.keyword'].values[0]")
     }
 
     fun getUserTotal(rangeCondition: RangeCondition): Long {
-        return BaseDao.getListCountOfGroupBy(highLevelClient, INDICES_NAME, SearchCondition(listOf(rangeCondition), getExactCond()),
+        return BaseDao.getListCountOfGroupBy(client, INDICES_NAME, SearchCondition(listOf(rangeCondition), getExactCond()),
                 "doc['user_name.keyword'].values[0]")
     }
 
@@ -202,5 +216,12 @@ class UserLogServiceImpl(val highLevelClient: RestHighLevelClient) : UserLogServ
         val qCon1 = QueryCondition("keyword_status", "SUCCESS", QueryCondition.QueryType.EXACT)
         val qCon2 = QueryCondition("operation.keyword", "LOGIN", QueryCondition.QueryType.EXACT)
         return listOf(qCon1, qCon2)
+    }
+
+    private fun getExactCond2(): Map<String, Array<String>> {
+        return mapOf(
+                "status" to arrayOf("SUCCESS"),
+                "operation.keyword" to arrayOf("LOGIN")
+        )
     }
 }

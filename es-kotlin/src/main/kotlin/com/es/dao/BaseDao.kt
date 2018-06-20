@@ -1,9 +1,6 @@
 package com.es.dao
 
-import com.es.common.GsonUtils
-import com.es.common.QueryCondition
-import com.es.common.RangeCondition
-import com.es.common.SearchCondition
+import com.es.common.*
 import com.es.model.ModelContants
 import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.action.search.SearchType
@@ -33,6 +30,37 @@ object BaseDao {
     val LOGGER: Logger = LoggerFactory.getLogger(this.javaClass)
     val MAX_INT_VALUE = 10000
 
+
+    fun queryBuildersOld(exactMap: Map<String, Array<String>> = emptyMap(),
+                         dimMap: Map<String, String> = emptyMap(),
+                         scopeList: List<RangeCondition> = emptyList()): BoolQueryBuilder {
+        LOGGER.info("exactList = ${GsonUtils.convert(exactMap)}, dimList = ${GsonUtils.convert(dimMap)}, scopeList = ${GsonUtils.convert(scopeList)}")
+        val bq = QueryBuilders.boolQuery()
+        // 精确查询
+        exactMap?.forEach { it ->
+            bq.filter(QueryBuilders.termsQuery(LogFields.FIELD_MAP[it.key], it.value.asList()))
+        }
+        // 模糊查询
+        dimMap?.forEach { it ->
+            bq.must(QueryBuilders.matchQuery(LogFields.FIELD_MAP[it.key], it.value))
+        }
+        // 范围查询
+        scopeList?.forEach { it ->
+            when (it.type) {
+                RangeCondition.Type.DATE -> {
+                    bq.must(QueryBuilders.rangeQuery(LogFields.FIELD_MAP[it.conditionName])
+                            .gte(it.gteValue).lte(it.lteValue).timeZone(it.timeZone))
+                }
+                else -> {
+                    bq.must(QueryBuilders.rangeQuery(LogFields.FIELD_MAP[it.conditionName])
+                            .gte(it.gteValue).lte(it.lteValue))
+                }
+            }
+        }
+        return bq
+    }
+
+
     fun queryBuilders(exactList: List<QueryCondition> = emptyList(),
                       dimList: List<QueryCondition> = emptyList(),
                       scopeList: List<RangeCondition> = emptyList()): BoolQueryBuilder {
@@ -44,7 +72,7 @@ object BaseDao {
         }
         // 模糊查询
         dimList?.forEach { it ->
-            bq.should(QueryBuilders.wildcardQuery(it.queryName, it.queryValue as String))
+            bq.must(QueryBuilders.matchQuery(it.queryName, it.queryValue))
         }
         // 范围查询
         scopeList?.forEach { it ->
@@ -63,11 +91,11 @@ object BaseDao {
     }
 
     fun aggBuilders(groupBy: String, topCount: Int, sortIsAsc: Boolean, absQueryCons: Map<String, String>?): TermsAggregationBuilder {
-        val ab = AggregationBuilders.terms("_groupBy").field(ModelContants.PARAMS_MAPS.get(groupBy))
-                .order(BucketOrder.aggregation("_groupBy", sortIsAsc)).size(if (topCount == 0) MAX_INT_VALUE else topCount)
+        val ab = AggregationBuilders.terms("_groupBy")
+                .field(ModelContants.PARAMS_MAPS.get(groupBy))
+                .size(if (topCount == 0) MAX_INT_VALUE else topCount)
         absQueryCons?.forEach { m ->
             val aggName = "_" + m.value + "_by"
-            ab.order(BucketOrder.aggregation(aggName, sortIsAsc))
             when (m.value) {
                 "max" -> ab.subAggregation(AggregationBuilders.max(aggName).field(ModelContants.PARAMS_MAPS.get(m.key)))
                 "min" -> ab.subAggregation(AggregationBuilders.max(aggName).field(ModelContants.PARAMS_MAPS.get(m.key)))
@@ -108,8 +136,8 @@ object BaseDao {
 
     fun getListOfGroupBy(highLevelClient: RestHighLevelClient, indicesName: String, sc: SearchCondition, scripts: String, topCount: Int = 0, termSort: Boolean = false): List<Terms.Bucket> {
         val size = if (topCount == 0) sc.currentPage * sc.pageSize else topCount
-        val aggs = AggregationBuilders.terms("distinct").script(Script(scripts)).size(size).order(BucketOrder.aggregation("distinct", termSort))
-        return highLevelClient.search(createSearchRequest(indicesName, sc, aggs)).aggregations.get<Terms>("distinct").buckets
+        val aggs = AggregationBuilders.terms("_key").script(Script(scripts)).size(size)
+        return highLevelClient.search(createSearchRequest(indicesName, sc, aggs)).aggregations.get<Terms>("_key").buckets
     }
 
     fun createSearchRequest(indicesName: String, sc: SearchCondition?, aggs: AggregationBuilder?): SearchRequest {

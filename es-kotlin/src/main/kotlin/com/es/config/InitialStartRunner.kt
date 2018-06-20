@@ -3,11 +3,8 @@ package com.es.config
 import com.es.common.GsonUtils
 import com.es.dao.IndicesDao
 import com.es.model.LogSetting
-import com.es.model.LogTimedTask
 import org.elasticsearch.action.bulk.BulkRequest
-import org.elasticsearch.action.index.IndexRequest
 import org.elasticsearch.client.RestHighLevelClient
-import org.elasticsearch.common.bytes.BytesArray
 import org.elasticsearch.common.xcontent.XContentType
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -17,6 +14,8 @@ import org.springframework.stereotype.Component
 import java.io.File
 import java.nio.charset.Charset
 import org.springframework.web.bind.annotation.RequestMethod
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 /**
@@ -35,7 +34,7 @@ class InitialStartRunner(val highLevelClient: RestHighLevelClient) : CommandLine
     override fun run(vararg args: String?) {
         // 初始化日志设置、日志删除、日志备份、日志恢复、定时任务配置等相关记录到Elasticsearch
         // 验证以上索引是否存在，若不存在则创建，若存在则跳过
-        LOGGER.info("初始化日志模块 start......")
+        /*LOGGER.info("初始化日志模块 start......")
         try {
             // 创建日志设置索引
             val indexName = "log_setting"
@@ -69,7 +68,7 @@ class InitialStartRunner(val highLevelClient: RestHighLevelClient) : CommandLine
         } catch (e: Exception) {
             LOGGER.error("初始化日志模块失败，错误原因：${e.message}")
         }
-        LOGGER.info("初始化日志模块 end!")
+        LOGGER.info("初始化日志模块 end!")*/
     }
 
     fun checkExistsOrCreateIndex(indexName: String, highLevelClient: RestHighLevelClient): Boolean {
@@ -85,3 +84,4 @@ class InitialStartRunner(val highLevelClient: RestHighLevelClient) : CommandLine
         return isExists
     }
 }
+

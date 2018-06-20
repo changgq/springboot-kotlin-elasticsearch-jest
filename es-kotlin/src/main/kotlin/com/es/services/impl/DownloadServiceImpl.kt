@@ -1,13 +1,9 @@
 package com.es.services.impl
 
-import com.es.common.ExcelUtils
 import com.es.common.SearchCondition
 import com.es.model.ModelContants
 import com.es.model.BasePage
 import com.es.services.DownloadService
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.launch
-import kotlinx.coroutines.experimental.runBlocking
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.client.RestHighLevelClient
@@ -16,10 +12,6 @@ import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import java.io.File
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import kotlin.system.measureTimeMillis
 
 /**
@@ -61,16 +53,4 @@ class DownloadServiceImpl(val highLevelClient: RestHighLevelClient) : DownloadSe
 //        ExcelUtils.genExcelAddContent(HSSFWorkbook(), File("d:/a.xls"), headers, datas, 0)
         wb.close()
     }
-}
-
-fun main(args: Array<String>) = runBlocking<Unit> {
-    launch(CommonPool) {
-        println(getIndex(10))
-    }
-    println(1)
-}
-
-
-suspend fun getIndex(index: Int): String {
-    return "" + index
 }

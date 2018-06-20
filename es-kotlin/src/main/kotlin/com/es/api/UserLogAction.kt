@@ -1,6 +1,7 @@
 package com.es.api
 
 import com.es.common.ApiResponse
+import com.es.common.Condition
 import com.es.common.RangeCondition
 import com.es.common.SearchCondition
 import com.es.services.UserLogService
@@ -46,7 +47,7 @@ class UserLogAction(highLevelClient: RestHighLevelClient) : BaseAction(highLevel
     }
 
     @RequestMapping(value = "userLoginGroupStatics", method = arrayOf(RequestMethod.POST))
-    fun getUserLoginGroupStatics(@RequestBody condition: SearchCondition): ApiResponse {
+    fun getUserLoginGroupStatics(@RequestBody condition: Condition): ApiResponse {
         return userLogService.getUserLoginGroupStatics(condition)
     }
 

@@ -8,7 +8,7 @@ package com.es.model
  * @description
  */
 data class UserOperationLog(
-        val userId: String = "",
+        var userId: String = "",
         val userGroup: String = "",
         val userName: String = "",
         val userAuth: String = "",
@@ -16,5 +16,7 @@ data class UserOperationLog(
         val ipAddress: String = "",
         val macAddress: String = "",
         val logInfo: String = "",
-        val logTimeStamp: String = ""
+        val logTimeStamp: String = "",
+        val certificateServer: String = "",
+        val linkInterface: String = ""
 ) : BaseLog()

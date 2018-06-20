@@ -37,24 +37,7 @@ class ZipCompressor(val zipPathName: String) {
         }
     }
 
-    fun compress2(vararg filePaths: String) {
-        val zipOut = ZipOutputStream(CheckedOutputStream(zipFile.outputStream(), CRC32()))
-        filePaths.forEach { it ->
-            val f = File(it)
-            LOGGER.info("Path==>" + f.path)
-            compressFile2(f, zipOut, "")
-        }
-    }
-
     fun compressFile(f: File, zipOut: ZipOutputStream, baseDir: String) {
-        if (f.exists()) {
-            zipOut.putNextEntry(ZipEntry(baseDir + f.name))
-            zipOut.write(f.readBytes())
-            zipOut.close()
-        }
-    }
-
-    fun compressFile2(f: File, zipOut: ZipOutputStream, baseDir: String) {
         if (f.exists()) {
             zipOut.putNextEntry(ZipEntry(baseDir + f.name))
             val buff = BufferedInputStream(f.inputStream())
@@ -74,7 +57,7 @@ class ZipCompressor(val zipPathName: String) {
     }
 }
 
-fun main(args: Array<String>) {
-    ZipCompressor("D://测试/resource.zip").compress("D:\\EBook\\ES6标准入门（第二版）.pdf")
-    ZipCompressor("D://测试/resource2.zip").compress2("D:\\EBook\\ES6标准入门（第二版）.pdf")
-}
+//fun main(args: Array<String>) {
+//    ZipCompressor("D://测试/resource.zip").compress("D:\\EBook\\ES6标准入门（第二版）.pdf")
+//    ZipCompressor("D://测试/resource2.zip").compress2("D:\\EBook\\ES6标准入门（第二版）.pdf")
+//}

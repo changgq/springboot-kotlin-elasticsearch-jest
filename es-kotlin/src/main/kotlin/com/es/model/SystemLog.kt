@@ -7,4 +7,9 @@ package com.es.model
  * @date 2018/6/5 15:41
  * @description
  */
-data class SystemLog(val process: String = "", val service: String = "", val logInfo: String = "", val logTimeStamp: String = "") : BaseLog()
+data class SystemLog(
+        val fan: String = "",
+        val cpu: String = "",
+        val operateType: String = "",
+        val systemMsg: String = "",
+        val logTimeStamp: String = "") : BaseLog()

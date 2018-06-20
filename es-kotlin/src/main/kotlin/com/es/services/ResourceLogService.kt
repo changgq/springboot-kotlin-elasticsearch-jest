@@ -1,6 +1,7 @@
 package com.es.services
 
 import com.es.common.ApiResponse
+import com.es.common.Condition
 import com.es.common.RangeCondition
 import com.es.common.SearchCondition
 import org.springframework.web.bind.annotation.RequestBody
@@ -21,7 +22,7 @@ interface ResourceLogService {
     fun linkTrafficRank(rangeCondition: RangeCondition, topCount: Int, type: String? = "down"): ApiResponse
     fun fileFormatPie(rangeCondition: RangeCondition, type: String?): ApiResponse
     // 暂时无法实现，使用原方法会导致集群宕机
-    fun resourceVisitGroupStatics(searchCondition: SearchCondition): ApiResponse
+    fun resourceVisitGroupStatics(searchCondition: Condition): ApiResponse
 
     // 暂时无法实现，使用原方法会导致集群宕机
     fun resourceVisitDetails(searchCondition: SearchCondition): ApiResponse

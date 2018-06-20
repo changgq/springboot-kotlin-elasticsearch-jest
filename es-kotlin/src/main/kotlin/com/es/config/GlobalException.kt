@@ -19,9 +19,10 @@ class GlobalException {
     @ResponseBody
     @ExceptionHandler
     fun processException(e: Exception): ApiResponse {
+        e.printStackTrace()
         LOGGER.error(e.message)
         val elapsed_time_ = measureTimeMillis {}
-        return ApiResponse(null, elapsed_time_, HttpStatus.INTERNAL_SERVER_ERROR,
+        return ApiResponse(null, null, elapsed_time_, HttpStatus.INTERNAL_SERVER_ERROR,
                 "[" + HttpStatus.responses[HttpStatus.INTERNAL_SERVER_ERROR] + "]:" + e.message)
     }
 }

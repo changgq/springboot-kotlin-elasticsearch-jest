@@ -17,9 +17,4 @@ data class EchartsData(val xAxis_String: Array<String> = emptyArray(), val xAxis
                   val yAxis_String: Array<String> = emptyArray(), val yAxis_Integer: Array<Int> = emptyArray(),
                   val yAxis_Float: Array<Float> = emptyArray())
 
-fun main(args: Array<String>) {
-    println(GsonUtils.convert(ApiResponse(EchartsData())))
-}
-
-
 data class ResourceLogVisit(val resourceName: String, val uri: String, val visitCount: Int, val lastVisitDate: String, val totalTraffic: String)

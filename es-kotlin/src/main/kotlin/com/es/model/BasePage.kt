@@ -7,10 +7,15 @@ package com.es.model
  * @date 2018/5/30 17:51
  * @description
  */
-data class BasePage(var pageIndex: Int = 1, var pageSize: Int = 10, var scrollId: String = "",
-                    var total: Long = 0, var data: List<Any>? = emptyList()) {
+data class BasePage(var currentPage: Int = 1, var pageSize: Int = 10, var scrollId: String = "",
+                    var totalHits: Long = 0, var data: List<Any>? = emptyList(), var pageCount: Int = 1) {
     init {
-        if (pageIndex <= 0) pageIndex = 1
+        if (currentPage <= 0) currentPage = 1
         if (pageSize <= 0) pageSize = 10
+
+        totalHits = if (totalHits > 10000) 10000 else totalHits
+
+        val _pCount = (totalHits / pageSize).toInt()
+        pageCount = if (_pCount > 1000) 999 else _pCount
     }
 }

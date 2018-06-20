@@ -2,14 +2,11 @@ package com.es.services.impl
 
 import com.es.common.GsonUtils
 import com.es.model.LogSetting
-import com.es.model.LogTimedTask
 import com.es.services.LogSettingService
-import com.google.common.reflect.TypeToken
 import org.elasticsearch.action.get.GetRequest
 import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.action.update.UpdateRequest
 import org.elasticsearch.client.RestHighLevelClient
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 
 /**

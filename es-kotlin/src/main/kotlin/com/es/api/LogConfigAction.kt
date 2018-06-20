@@ -1,11 +1,13 @@
 package com.es.api
 
 import com.es.common.ApiResponse
+import com.es.common.Condition
 import com.es.common.GsonUtils
 import com.es.model.LogSetting
 import com.es.services.LogSettingService
 import com.es.services.impl.LogSettingServiceImpl
 import org.elasticsearch.client.RestHighLevelClient
+import org.elasticsearch.search.sort.SortOrder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 import java.io.File
@@ -57,4 +59,6 @@ class LogConfigAction(highLevelClient: RestHighLevelClient) : BaseAction(highLev
         val ls = logSettingService.getById("1")
         return ApiResponse(ls)
     }
+
+
 }

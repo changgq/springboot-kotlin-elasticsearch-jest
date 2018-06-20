@@ -1,6 +1,7 @@
 package com.es.services
 
 import com.es.common.ApiResponse
+import com.es.common.Condition
 import com.es.common.RangeCondition
 import com.es.common.SearchCondition
 
@@ -64,7 +65,7 @@ interface UserLogService {
      * @param condition
      * @return
      */
-    fun getUserLoginGroupStatics(condition: SearchCondition): ApiResponse
+    fun getUserLoginGroupStatics(condition: Condition): ApiResponse
 
     /**
      * 功能描述: 获取用户登录统计表格【明细】数据

@@ -1,12 +1,8 @@
 package com.es.config
 
 import com.es.common.*
-import com.es.dao.BaseDao
 import com.es.dao.IndicesDao
-import com.es.date2string
-import com.es.datetime2string
 import com.es.model.LogDeleteRecord
-import com.es.model.LogSetting
 import com.es.model.LogTimedTask
 import com.es.services.LogBackupsRecordService
 import com.es.services.LogDeleteRecordService
@@ -24,7 +20,6 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.concurrent.timer
 
 
 /**

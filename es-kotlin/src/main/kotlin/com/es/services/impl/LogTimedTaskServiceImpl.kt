@@ -4,8 +4,6 @@ import com.es.common.GsonUtils
 import com.es.model.LogSetting
 import com.es.model.LogTimedTask
 import com.es.services.LogTimedTaskService
-import com.google.common.reflect.TypeToken
-import com.google.gson.GsonBuilder
 import org.elasticsearch.action.delete.DeleteRequest
 import org.elasticsearch.action.get.GetRequest
 import org.elasticsearch.action.index.IndexRequest

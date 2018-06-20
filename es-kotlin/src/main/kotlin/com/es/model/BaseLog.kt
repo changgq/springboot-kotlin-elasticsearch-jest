@@ -2,9 +2,6 @@ package com.es.model
 
 
 open class BaseLog {
-    enum class LogLevel {
-        INFO, WARNING, ERROR
-    }
     var host: String = ""
     var port: Int = 0
     var path: String = ""
@@ -14,14 +11,14 @@ open class BaseLog {
     var timestamp: String = ""
     var logLevel: LogLevel = LogLevel.ERROR
 
-    fun setLogLevel(lv: String) {
-        if (lv.startsWith("I")) {
-            this.logLevel = LogLevel.INFO
-        } else if (lv.startsWith("W")) {
-            this.logLevel = LogLevel.WARNING
-        } else {
-            this.logLevel = LogLevel.ERROR
-        }
+    enum class LogLevel {
+        INFO, WARNING, ERROR
+    }
+
+    fun setLogLevel(v: String) = when (v) {
+        "INFO" -> logLevel = LogLevel.INFO
+        "WARNING" -> logLevel = LogLevel.WARNING
+        else -> logLevel = LogLevel.ERROR
     }
 }
 

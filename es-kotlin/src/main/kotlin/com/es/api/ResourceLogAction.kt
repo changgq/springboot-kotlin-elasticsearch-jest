@@ -1,6 +1,7 @@
 package com.es.api
 
 import com.es.common.ApiResponse
+import com.es.common.Condition
 import com.es.common.RangeCondition
 import com.es.common.SearchCondition
 import com.es.services.ResourceLogService
@@ -191,7 +192,7 @@ class ResourceLogAction(val highLevelClient: RestHighLevelClient) {
     }
 
     @RequestMapping(value = "/resourceVisitGroupStatics", method = arrayOf(RequestMethod.POST))
-    fun resourceVisitGroupStatics(@RequestBody condition: SearchCondition): ApiResponse {
+    fun resourceVisitGroupStatics(@RequestBody condition: Condition): ApiResponse {
 
 //        for (index in 1..1) {
 //            condition.currentPage = index

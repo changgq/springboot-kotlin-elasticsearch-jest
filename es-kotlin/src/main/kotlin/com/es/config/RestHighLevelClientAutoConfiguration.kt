@@ -1,7 +1,6 @@
 package com.es.config
 
 import com.google.gson.Gson
-import org.apache.coyote.http11.Constants.a
 import org.elasticsearch.client.RestHighLevelClient
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.autoconfigure.AutoConfigureAfter
@@ -15,7 +14,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.apache.http.HttpHost
 import org.elasticsearch.client.RestClient
-import org.elasticsearch.client.RestClient.builder
 import org.elasticsearch.client.RestClientBuilder
 
 /**

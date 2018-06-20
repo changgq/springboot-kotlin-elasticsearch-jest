@@ -1,6 +1,6 @@
 package com.es.model
 
-import com.es.datetime2string
+import com.es.common.datetime2string
 import java.util.*
 
 /**
