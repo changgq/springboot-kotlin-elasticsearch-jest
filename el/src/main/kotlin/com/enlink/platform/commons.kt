@@ -1,15 +1,47 @@
 package com.enlink.platform
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import org.apache.poi.hssf.usermodel.HSSFWorkbook
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.io.BufferedInputStream
 import java.io.File
+import java.lang.reflect.Type
+import java.util.zip.CRC32
+import java.util.zip.CheckedOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 data class CommonResponse(val data: Any?,
-                          val extend: Any?,
                           val response_time: Long = 0,
                           val status_code: Int = HttpStatus.OK,
                           val message: String = HttpStatus.responses.get(status_code)!!)
 
+
+/**
+ * 功能描述: Gson工具类
+ */
+object GsonUtils {
+    val gb: Gson = GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create()
+
+    fun convert(any: Any): String? {
+        return gb.toJson(any)
+    }
+
+    fun <T> reConvert(json: String, clazz: Class<T>?): T {
+        return gb.fromJson(json, clazz)
+    }
+
+    fun <T> reConvert2List(json: String, type: Type): T {
+        return gb.fromJson(json, type)
+    }
+}
+
+/**
+ * 功能描述: Excel工具类
+ */
 object ExcelUtils {
     enum class ExcelType {
         XLS, XLSX
@@ -34,6 +66,181 @@ object ExcelUtils {
     }
 }
 
+/**
+ * 功能描述: Zip工具类
+ */
+class ZipCompressor(val zipPathName: String) {
+    private val LOGGER: Logger = LoggerFactory.getLogger(ZipCompressor::class.java)
+    private val BUFFER_SIZE = 8192
+    private val zipFile: File
+
+    init {
+        zipFile = File(zipPathName)
+    }
+
+    fun compress(vararg filePaths: String) {
+        val zipOut = ZipOutputStream(CheckedOutputStream(zipFile.outputStream(), CRC32()))
+        filePaths.forEach { it ->
+            val f = File(it)
+            LOGGER.info("Path==>" + f.path)
+            compressFile(f, zipOut, "")
+        }
+    }
+
+    fun compressFile(f: File, zipOut: ZipOutputStream, baseDir: String) {
+        if (f.exists()) {
+            zipOut.putNextEntry(ZipEntry(baseDir + f.name))
+            val buff = BufferedInputStream(f.inputStream())
+            val data = ByteArray(BUFFER_SIZE)
+            var isWrite = true
+            while (isWrite) {
+                val count = buff.read(data, 0, BUFFER_SIZE)
+                if (count > 0) {
+                    zipOut.write(data, 0, count)
+                    continue
+                }
+                isWrite = false
+            }
+            buff.close()
+            zipOut.close()
+        }
+    }
+}
+
+/**
+ * 功能描述: 索引映射关系
+ */
+object IndexMappings {
+    val Index_mappings = mapOf<String, String>(
+            "userLog" to "user",                    // 用户操作日志
+            "systemLog" to "system",                // 系统日志
+            "adminLog" to "admin",                  // 管理员操作日志
+            "loginLog" to "login",                  // 登陆日志
+            "resLog" to "res",                      // 资源访问日志
+            "allLog" to "ALL",                      // 所有日志
+            "customAllLog" to "ENLINK_CUSTOM_ALL"   // 所有日志
+    )
+
+    val Index_field_mappings = mapOf<String, String>(
+            "resourceName" to "resource_name",
+            "resourceName.keyword" to "resource_name.keyword",
+
+            //uri
+            "uri" to "uri",
+            "uri.keyword" to "uri.keyword",
+
+            //访问地址
+            "visitAddress" to "visit_address",
+            "visitAddress.keyword" to "visit_address.keyword",
+
+            //浏览器信息
+            "browserInfo" to "browser_info",
+            "browserInfo.keyword" to "browser_info.keyword",
+
+            //url/http协议
+            "urlHttp" to "url_http",
+            "urlHttp.keyword" to "urlHttp.keyword",
+
+            //日志级别
+            "logLevel" to "keyword_log_level",
+            "logLevel.keyword" to "keyword_log_level",
+
+            //接收时间
+            "date" to "@timestamp",
+
+            //完整日志信息
+            "message" to "message",
+            "message.keyword" to "message.keyword",
+
+            //用户id（resLog实际实现时，是表示用户名)
+            "userId" to "user_id",
+            "userId.keyword" to "user_id.keyword",
+
+            //用户名(resLog实际实现时，是表示用户全名)
+            "userName" to "user_name",
+            "userName.keyword" to "user_name.keyword",
+
+            //用户组
+            "userGroup" to "user_group",
+            "userGroup.keyword" to "user_group.keyword",
+
+            //用户权限
+            "userAuth.keyword" to "keyword_user_auth",
+            "userAuth" to "keyword_user_auth",
+
+            //操作
+            "operation" to "operation",
+            "operation.keyword" to "operation.keyword",
+
+            //ip地址
+            "ipAddress" to "ip_address",
+            "ipAddress.keyword" to "ip_address.keyword",
+
+            //mac地址
+            "macAddress" to "mac_address",
+            "macAddress.keyword" to "mac_address.keyword",
+
+            //备注信息
+            "logInfo" to "log_info",
+            "logInfo.keyword" to "log_info.keyword",
+
+            //日志时间
+            "logTimeStamp" to "log_timestamp",
+            "logTimeStamp.keyword" to "log_timestamp.keyword",
+
+            //认证服务器
+            "certificateServer" to "certificate_server",
+            "certificateServer.keyword" to "certificate_server.keyword",
+
+            //链接隧道
+            "linkInterface" to "link_interface",
+            "linkInterface.keyword" to "link_interface.keyword",
+
+            //服务
+            "service" to "service",
+            "service.keyword" to "service.keyword",
+
+            //进程
+            "process" to "process",
+            "process.keyword" to "process.keyword",
+
+            //登陆设备操作系统
+            "deviceOS" to "device_os",
+            "deviceOS.keyword" to "device_os.keyword",
+
+            //登陆设备类型（windows客户端or网页、ios app、andriod app、macos app）
+            "deviceType" to "device_os",
+            "deviceType.keyword" to "device_os.keyword",
+
+            //登陆客户端版本
+            "clientInfo" to "client_info",
+            "clientInfo.keyword" to "client_info.keyword",
+
+            //操作状态
+            "status" to "keyword_status",
+            "status.keyword" to "keyword_status",
+
+            "totalTraffic" to "long_total_traffic",
+            "uploadTraffic" to "long_uplink_traffic",
+            "downloadTraffic" to "long_downlink_traffic",
+
+            "visitType" to "keyword_visit_type",
+            "visitType.keyword" to "keyword_visit_type",
+
+            "fileName" to "file_name",
+            "fileName.keyword" to "file_name",
+
+            "fileFormat" to "keyword_file_format",
+            "fileFormat.keyword" to "keyword_file_format",
+
+            "appType" to "app_type",
+            "appType.keyword" to "app_type.keyword"
+    )
+}
+
+/**
+ * 功能描述: HTTP状态码
+ */
 object HttpStatus {
     var OK = 200
     val CREATED = 201

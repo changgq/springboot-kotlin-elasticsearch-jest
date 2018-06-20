@@ -1,6 +1,7 @@
 package com.enlink.controller
 
 import com.enlink.platform.CommonResponse
+import com.enlink.platform.GsonUtils
 import org.elasticsearch.client.RestHighLevelClient
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.GetMapping
@@ -10,9 +11,7 @@ import kotlin.system.measureTimeMillis
 
 @RestController
 @RequestMapping("/cluster")
-class ClusterController {
-    @Autowired
-    lateinit var client: RestHighLevelClient
+class ClusterController : BaseController() {
 
     /**
      * @api {GET} /api/cluster/info 1_集群基本信息
@@ -36,6 +35,7 @@ class ClusterController {
                     "buildTime" to info.build.date()
             )
         }
-        return CommonResponse(data, null, elapsed_time_)
+        LOGGER.info(GsonUtils.convert(data))
+        return CommonResponse(data, elapsed_time_)
     }
 }

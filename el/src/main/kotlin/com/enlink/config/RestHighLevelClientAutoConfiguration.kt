@@ -24,10 +24,10 @@ import org.elasticsearch.client.RestClientBuilder
  */
 @Configuration
 @ConditionalOnClass(RestHighLevelClient::class)
-@EnableConfigurationProperties(JestProperties::class)
+@EnableConfigurationProperties(ElasticsearchProperties::class)
 @AutoConfigureAfter(GsonAutoConfiguration::class)
 open class RestHighLevelClientAutoConfiguration(
-        var properties: JestProperties,
+        var properties: ElasticsearchProperties,
         var gsonProvider: ObjectProvider<Gson>,
         var builderCustomizers: ObjectProvider<List<HttpClientConfigBuilderCustomizer>>?
 ) {

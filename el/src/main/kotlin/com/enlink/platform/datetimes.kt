@@ -37,16 +37,12 @@ fun Any.day(value: Int): DateOperator {
     return DateOperator(DateOptUnit.DATE, value)
 }
 
-object CalendarUnit {
-    val newCal = GregorianCalendar()
-}
-
 /**
  * date + year(3)
  * 往后的几天
  */
 operator fun Date.plus(nextVal: DateOperator): Date {
-    val calendar = CalendarUnit.newCal
+    val calendar = DateTimeUtils.newCal
     calendar.time = this
     calendar.add(nextVal.unit.parseType(), nextVal.value)
     return calendar.time
@@ -56,7 +52,7 @@ operator fun Date.plus(nextVal: DateOperator): Date {
  * date - month(4)
  */
 operator fun Date.minus(nextVal: DateOperator): Date {
-    val calendar = CalendarUnit.newCal
+    val calendar = DateTimeUtils.newCal
     calendar.time = this
     calendar.add(nextVal.unit.parseType(), nextVal.value * -1)
     return calendar.time
@@ -66,7 +62,7 @@ operator fun Date.minus(nextVal: DateOperator): Date {
  * 得到月末
  */
 operator fun Date.inc(): Date {
-    val calendar = CalendarUnit.newCal
+    val calendar = DateTimeUtils.newCal
     calendar.time = this
     calendar.add(Calendar.MONTH, 1);
     calendar.set(Calendar.DAY_OF_MONTH, 0);
@@ -77,7 +73,7 @@ operator fun Date.inc(): Date {
  * 得到月初
  */
 operator fun Date.dec(): Date {
-    val calendar = CalendarUnit.newCal
+    val calendar = DateTimeUtils.newCal
     calendar.time = this
     calendar.set(Calendar.DAY_OF_MONTH, 1)
     return calendar.time
@@ -89,7 +85,7 @@ operator fun Date.dec(): Date {
  * date[0]:2015  date[1]:12 date[2]:21
  */
 operator fun Date.get(position: Int): Int {
-    val calendar = CalendarUnit.newCal
+    val calendar = DateTimeUtils.newCal
     calendar.time = this
     var value = 0
     when (position) {
@@ -105,10 +101,8 @@ operator fun Date.get(position: Int): Int {
 
 /**
  * 比较2个日期
- * if(date1 > date2) {
- * }
+ * if(date1 > date2) {}
  */
-
 operator fun Date.compareTo(compareDate: Date): Int {
     return (time - compareDate.time).toInt()
 }
@@ -120,68 +114,101 @@ fun Date.stringFormat(formatType: String): String {
     return SimpleDateFormat(formatType).format(this)
 }
 
-fun Date.currentWeekFirst(): Date {
-    var cal = CalendarUnit.newCal
-    cal.time = this
-    cal.set(Calendar.DAY_OF_WEEK, 1)
-    return cal.time
+inline fun Date.date2string_point(): String {
+    return SimpleDateFormat("yyyy.MM.dd").format(this)
 }
 
-fun Date.currentWeekLast(): Date {
-    var cal = CalendarUnit.newCal
-    cal.time = this
-    cal.set(Calendar.DAY_OF_WEEK, 1)
-    cal.roll(Calendar.DAY_OF_WEEK, -1)
-    return cal.time
+inline fun Date.date2string(): String {
+    return SimpleDateFormat("yyyy-MM-dd").format(this)
 }
 
-fun Date.currentMonthFirst(): Date {
-    var cal = CalendarUnit.newCal
-    cal.time = this
-    cal.set(Calendar.DAY_OF_MONTH, 1)
-    return cal.time
+inline fun Date.datetime2string(): String {
+    return SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(this)
 }
 
-fun Date.currentMonthLast(): Date {
-    var cal = CalendarUnit.newCal
-    cal.time = this
-    cal.set(Calendar.DAY_OF_MONTH, 1)
-    cal.roll(Calendar.DAY_OF_MONTH, -1)
-    return cal.time
+inline fun String.string2date(): Date {
+    return SimpleDateFormat("yyyy-MM-dd").parse(this)
 }
 
-fun Date.currentYearFirst(): Date {
-    var cal = CalendarUnit.newCal
-    cal.time = this
-    cal.set(Calendar.DAY_OF_YEAR, 1)
-    return cal.time
+inline fun String.string2datetime(): Date {
+    return SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(this)
 }
 
-fun Date.currentYearLast(): Date {
-    var cal = CalendarUnit.newCal
-    cal.time = this
-    cal.set(Calendar.DAY_OF_YEAR, 1)
-    cal.roll(Calendar.DAY_OF_YEAR, -1)
-    return cal.time
+inline fun String.checkIsDate(): Boolean {
+    try {
+        return this.string2date().date2string() == this
+    } catch (e: Exception) {
+        return false
+    }
 }
 
-fun Date.last3monthsFirst(): Date {
-    var cal = CalendarUnit.newCal
-    cal.time = this
-    cal.add(Calendar.DATE, 90 * -1)
-    return cal.time
+object DateTimeUtils {
+    val newCal = GregorianCalendar()
+
+    fun currentWeekFirst(): Date {
+        var cal = newCal
+        cal.time = Date()
+        cal.set(Calendar.DAY_OF_WEEK, 1)
+        return cal.time
+    }
+
+    fun currentWeekLast(): Date {
+        var cal = newCal
+        cal.time = Date()
+        cal.set(Calendar.DAY_OF_WEEK, 1)
+        cal.roll(Calendar.DAY_OF_WEEK, -1)
+        return cal.time
+    }
+
+    fun currentMonthFirst(): Date {
+        var cal = newCal
+        cal.time = Date()
+        cal.set(Calendar.DAY_OF_MONTH, 1)
+        return cal.time
+    }
+
+    fun currentMonthLast(): Date {
+        var cal = newCal
+        cal.time = Date()
+        cal.set(Calendar.DAY_OF_MONTH, 1)
+        cal.roll(Calendar.DAY_OF_MONTH, -1)
+        return cal.time
+    }
+
+    fun currentYearFirst(): Date {
+        var cal = newCal
+        cal.time = Date()
+        cal.set(Calendar.DAY_OF_YEAR, 1)
+        return cal.time
+    }
+
+    fun currentYearLast(): Date {
+        var cal = newCal
+        cal.time = Date()
+        cal.set(Calendar.DAY_OF_YEAR, 1)
+        cal.roll(Calendar.DAY_OF_YEAR, -1)
+        return cal.time
+    }
+
+    fun last3monthsFirst(): Date {
+        var cal = newCal
+        cal.time = Date()
+        cal.add(Calendar.DATE, 90 * -1)
+        return cal.time
+    }
+
+    fun last6monthsFirst(): Date {
+        var cal = newCal
+        cal.time = Date()
+        cal.add(Calendar.DATE, 180 * -1)
+        return cal.time
+    }
+
+    fun last12monthsFirst(): Date {
+        var cal = newCal
+        cal.time = Date()
+        cal.add(Calendar.DATE, 365 * -1)
+        return cal.time
+    }
 }
 
-fun Date.last6monthsFirst(): Date {
-    var cal = CalendarUnit.newCal
-    cal.time = this
-    cal.add(Calendar.DATE, 180 * -1)
-    return cal.time
-}
-
-fun Date.last12monthsFirst(): Date {
-    var cal = CalendarUnit.newCal
-    cal.time = this
-    cal.add(Calendar.DATE, 365 * -1)
-    return cal.time
-}

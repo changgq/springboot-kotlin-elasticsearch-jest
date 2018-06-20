@@ -1,11 +1,9 @@
 server:
   port: 8080
   servlet:
-    path: /eslogs/api
+    path: /logs/api
 
 spring:
   elasticsearch:
-    jest:
-#      uris: http://192.168.32.189:9200
-      uris: http://49.4.9.225:9200
-#      uris: http://127.0.0.1:9200
+    highclient:
+      uris: ["http://49.4.9.225:9200"]
