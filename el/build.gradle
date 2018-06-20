@@ -28,6 +28,8 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$vKotlin"
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:$vJacksonKotlin"
     compile "org.springframework.boot:spring-boot-starter-web:$vSpringBoot"
+//    用户登录认证
+//    compile "org.springframework.boot:spring-boot-starter-security:$vSpringBoot"
     compile "org.springframework.boot:spring-boot-devtools:$vSpringBoot"
     compile "org.springframework.boot:spring-boot-configuration-processor:$vSpringBoot"
 
