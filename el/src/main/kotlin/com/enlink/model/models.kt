@@ -53,8 +53,8 @@ class LogSetting(var id: String = "1",
                  var lastDeleteDate: String = Date().date2string(),         // 已删除日志的最后一天
                  var lastBackupDate: String = Date().date2string(),         // 最后一次日志备份日期
                  var startStatus: Boolean = false,                          // 日志模块开启状态，默认为false
-                 var logTypes: String = "${LogType.ALL}",                   // 日志类别，默认所有
-                 var logLevels: String = "${LogLevel.ALL}"                  // 日志级别，默认所有
+                 var logTypes: String = LogType.ALL.name,                   // 日志类别，默认所有
+                 var logLevels: String = LogLevel.ALL.name                  // 日志级别，默认所有
 ) {
 
     enum class ConfigType {
