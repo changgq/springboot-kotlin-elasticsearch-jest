@@ -32,7 +32,9 @@ dependencies {
 //    compile "org.springframework.boot:spring-boot-starter-security:$vSpringBoot"
     compile "org.springframework.boot:spring-boot-devtools:$vSpringBoot"
     compile "org.springframework.boot:spring-boot-configuration-processor:$vSpringBoot"
+    compile "org.springframework.boot:spring-boot-starter-actuator:$vSpringBoot"
 
+    compile 'io.dropwizard.metrics:metrics-core:4.0.2'
     compile "com.squareup.okhttp3:okhttp:3.10.0"
     compile "org.apache.poi:poi:$vPoi"
     compile "org.apache.poi:poi-ooxml:$vPoi"

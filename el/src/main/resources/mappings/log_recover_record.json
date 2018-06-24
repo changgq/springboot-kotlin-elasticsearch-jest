@@ -6,7 +6,7 @@
     }
   },
   "mappings": {
-    "LOG_RECOVER_RECORD": {
+    "doc": {
       "_source": {
         "enabled": true
       },

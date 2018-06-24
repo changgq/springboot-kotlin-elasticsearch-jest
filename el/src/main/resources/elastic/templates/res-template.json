@@ -1,0 +1,121 @@
+{
+  "template": "res_template",
+  "index_patterns": [
+    "res*"
+  ],
+  "order": 1,
+  "settings": {
+    "index.number_of_shards": 1,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "doc": {
+      "_source": {
+        "enabled": true
+      },
+      "dynamic": "strict",
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "@version": {
+          "type": "keyword"
+        },
+        "type": {
+          "type": "keyword"
+        },
+        "app_type": {
+          "type": "keyword"
+        },
+        "browser_info": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "float_response_time": {
+          "type": "float"
+        },
+        "host": {
+          "type": "keyword"
+        },
+        "ip_address": {
+          "type": "keyword"
+        },
+        "keyword_file_format": {
+          "type": "keyword"
+        },
+        "keyword_log_level": {
+          "type": "keyword"
+        },
+        "keyword_status": {
+          "type": "keyword"
+        },
+        "log_timestamp": {
+          "type": "date",
+          "format": "dd/MMM/yyyy:HH:mm:ss Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+        },
+        "long_downlink_traffic": {
+          "type": "long"
+        },
+        "long_total_traffic": {
+          "type": "long"
+        },
+        "long_uplink_traffic": {
+          "type": "long"
+        },
+        "message": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "path": {
+          "type": "keyword"
+        },
+        "request_referer": {
+          "type": "keyword"
+        },
+        "resource_name": {
+          "type": "keyword"
+        },
+        "session_id": {
+          "type": "keyword"
+        },
+        "short_request_count": {
+          "type": "double"
+        },
+        "tags": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "uri": {
+          "type": "keyword"
+        },
+        "url_http": {
+          "type": "keyword"
+        },
+        "user_group": {
+          "type": "keyword"
+        },
+        "user_id": {
+          "type": "keyword"
+        },
+        "user_name": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}

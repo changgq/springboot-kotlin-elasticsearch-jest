@@ -20,10 +20,16 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Controller
 import org.springframework.web.bind.annotation.RequestBody
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.stream.Collectors.toMap
 import kotlin.math.log
+import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.full.memberProperties
+import kotlin.reflect.full.superclasses
 import kotlin.system.measureTimeMillis
+import java.util.Locale.CHINESE
+
 
 /**
  * 功能描述：基础Action
@@ -89,7 +95,9 @@ open class BaseController {
         if (null != aggrs) {
             s.aggregation(aggrs)
         }
-        var totalHits = client.search(SearchRequest(getIndexName(logType)).source(s)).hits.totalHits
+        val _request = SearchRequest(getIndexName(logType)).source(s)
+        LOGGER.info(_request.source().toString())
+        var totalHits = client.search(_request).hits.totalHits
         if (totalHits > MAX_COUNT) totalHits = MAX_COUNT.toLong()
         return totalHits
     }
@@ -99,7 +107,7 @@ open class BaseController {
      */
     fun getPageData(logType: String, q: QueryBuilder, beginIndex: Int, pageSize: Int,
                     sortMap: Map<String, SortOrder>?, aggrs: AggregationBuilder?): List<Any> {
-        val s = SearchSourceBuilder().query(q).from(beginIndex).size(pageSize)
+        val s = SearchSourceBuilder().query(q).from(beginIndex).size(pageSize).sort("@timestamp", SortOrder.DESC)
         if (null != sortMap) {
             sortMap.map {
                 s.sort(it.key, it.value)
@@ -110,45 +118,13 @@ open class BaseController {
         }
 
         val request = SearchRequest(getIndexName(logType)).source(s)
-        LOGGER.info(request.toString())
+        LOGGER.info(request.source().toString())
         val searchHits = client.search(request).hits.hits
         val list = List<Map<String, Any?>>(searchHits.size, { x ->
             reConvertToMap(searchHits.get(x).sourceAsMap, logType)
         })
         LOGGER.info(GsonUtils.convert(list))
         return list
-    }
-
-    fun requestBuilder(indexName: String, isCount: Boolean, q: QueryBuilder,
-                       beginIndex: Int, pageSize: Int, aggrs: AggregationBuilder?): SearchRequest? {
-        val source = SearchSourceBuilder().query(q)
-        if (!isCount) {
-            source.from(beginIndex).size(pageSize)
-        }
-        if (null != aggrs) {
-            source.aggregation(aggrs)
-        }
-        return SearchRequest(indexName).source(source)
-    }
-
-    /**
-     * 功能描述: 获取聚合AggregationBuilder
-     */
-    fun queryAggrs(groupBy: String, topCount: Int, sortIsAsc: Boolean, absQueryCons: Map<String, String>?): AggregationBuilder {
-        val ab = AggregationBuilders.terms("_groupBy").field(getFieldName(groupBy))
-                .size(if (topCount == 0) MAX_AGGR_COUNT else topCount)
-        absQueryCons?.forEach { m ->
-            val aggName = "_" + m.value + "_by"
-            when (m.value) {
-                "max" -> ab.subAggregation(AggregationBuilders.max(aggName).field(getFieldName(m.key)))
-                "min" -> ab.subAggregation(AggregationBuilders.max(aggName).field(getFieldName(m.key)))
-                "count" -> ab.subAggregation(AggregationBuilders.count(aggName).field(getFieldName(m.key)))
-                "sum" -> ab.subAggregation(AggregationBuilders.sum(aggName).field(getFieldName(m.key)))
-                "avg" -> ab.subAggregation(AggregationBuilders.avg(aggName).field(getFieldName(m.key)))
-                "subAggs" -> ab.subAggregation(AggregationBuilders.terms("_" + m.key + "_groupBy").field(getFieldName(m.key)))
-            }
-        }
-        return ab
     }
 
     /**
@@ -161,7 +137,13 @@ open class BaseController {
         val bq = QueryBuilders.boolQuery()
         // 精确查询
         exactMap?.forEach { it ->
-            bq.filter(QueryBuilders.termsQuery(getFieldName(it.key), it.value.asList()))
+            if (it.value.asList().size > 0) {
+                it.value.asList().forEach { x ->
+                    if (x.isNotBlank()) {
+                        bq.filter(QueryBuilders.termsQuery(getFieldName(it.key), x))
+                    }
+                }
+            }
         }
         // 模糊查询
         dimMap?.forEach { it ->
@@ -209,8 +191,38 @@ open class BaseController {
             "loginLog" -> LoginLog::class
             else -> UserLog::class
         }
-        return kClazz.memberProperties.map { x ->
+
+        val mp = mutableMapOf<String, Any?>()
+        mp.putAll(kClazz.superclasses[0].memberProperties.map { x ->
             x.name to sourceMap.get(IndexMappings.Index_field_mappings.get(x.name))
-        }.toMap()
+        }.toMap())
+
+        mp.putAll(kClazz.memberProperties.map { x ->
+            val _key = x.name
+            var _value = sourceMap.get(IndexMappings.Index_field_mappings.get(x.name))
+            if (_key.equals("logTimeStamp") && _value != null) {
+                _value = _value as String
+                if (!_value.contains("-")) {
+                    val formatter = SimpleDateFormat("dd/MMM/yyyy:hh:mm:ss Z", Locale.ENGLISH)
+                    _value = formatter.parse(_value).datetime2string()
+                }
+            }
+            if (_key.equals("userGroup")) {
+                "userGroupHex" to _value
+                if (_value != null) {
+                    _value = _value as String
+                    if (_value.contains("\\")) {
+                        _value = CommonStringUtils.hexStringToString(_value.replace("\\x", ""))
+                    }
+                }
+            }
+            _key to _value
+        }.toMap())
+
+        return mp
     }
+}
+
+fun main(args: Array<String>) {
+    println(CommonStringUtils.hexStringToString("E69599E5B7A5"))
 }

@@ -1,16 +1,26 @@
 {
+  "template": "task-template",
+  "index_patterns": [
+    "task*"
+  ],
+  "order": 1,
   "settings": {
-    "index": {
-      "number_of_shards": 1,
-      "number_of_replicas": 1
-    }
+    "index.number_of_shards": 1,
+    "number_of_replicas": 1
   },
   "mappings": {
     "doc": {
       "_source": {
         "enabled": true
       },
+      "dynamic": "strict",
       "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "@version": {
+          "type": "keyword"
+        },
         "id": {
           "type": "keyword"
         },

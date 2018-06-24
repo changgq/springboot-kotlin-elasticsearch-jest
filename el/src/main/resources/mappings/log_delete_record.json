@@ -6,7 +6,7 @@
     }
   },
   "mappings": {
-    "LOG_DELETE_RECORD": {
+    "doc": {
       "_source": {
         "enabled": true
       },

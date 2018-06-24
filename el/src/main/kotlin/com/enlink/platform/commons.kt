@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory
 import java.io.BufferedInputStream
 import java.io.File
 import java.lang.reflect.Type
+import java.nio.charset.Charset
 import java.util.zip.CRC32
 import java.util.zip.CheckedOutputStream
 import java.util.zip.ZipEntry
@@ -66,6 +67,22 @@ object ExcelUtils {
     }
 }
 
+
+object CommonStringUtils {
+    fun hexStringToString(hexStr: String): String {
+        val str = "0123456789ABCDEF"
+        val hexs = hexStr.toCharArray()
+        val bytes = ByteArray(hexStr.length / 2)
+        var n: Int
+        for (i in bytes.indices) {
+            n = str.indexOf(hexs[2 * i]) * 16
+            n += str.indexOf(hexs[2 * i + 1])
+            bytes[i] = (n and 0xff).toByte()
+        }
+        return String(bytes, Charset.forName("UTF-8"))
+    }
+}
+
 /**
  * 功能描述: Zip工具类
  */
@@ -106,6 +123,7 @@ class ZipCompressor(val zipPathName: String) {
         }
     }
 }
+
 
 /**
  * 功能描述: 索引映射关系
@@ -223,6 +241,9 @@ object IndexMappings {
             "totalTraffic" to "long_total_traffic",
             "uploadTraffic" to "long_uplink_traffic",
             "downloadTraffic" to "long_downlink_traffic",
+
+            "uplinkTraffic" to "long_uplink_traffic",
+            "downlinkTraffic" to "long_downlink_traffic",
 
             "visitType" to "keyword_visit_type",
             "visitType.keyword" to "keyword_visit_type",

@@ -1,8 +1,10 @@
-{ "create" : { "_index" : "log_timed_task", "_type" : "LOG_TIMED_TASK", "_id" : "1" } }
+{ "create" : { "_index" : ".log-setting", "_type" : "doc", "_id" : "1" } }
+{"id" : "1", "useThirdD"B : "false", "configType" : "DATE", "startSaveTime" : "2018-06-23", "dayRate" : "90", "countRate" : "10000", "lastDeleteDate" : "2018-06-23", "lastBackupDate" : "2018-06-23", "startStatus" : "false", "logTypes" : "ALL", "logLevels" : "ALL"}
+{ "create" : { "_index" : "log_timed_task", "_type" : "doc", "_id" : "1" } }
 { "id" : "1", "taskName" : "每天日志删除任务", "taskCode" : "deleteTask", "taskCreateDate" : "2018-06-08 00:00:00", "taskExecuteTimes" : 0, "taskFirstExecute" : "1528387200000", "taskFrequency" : "86400000", "taskVersion" : 0, "taskStatus" : true }
-{ "create" : { "_index" : "log_timed_task", "_type" : "LOG_TIMED_TASK", "_id" : "2" } }
+{ "create" : { "_index" : "log_timed_task", "_type" : "doc", "_id" : "2" } }
 { "id" : "2", "taskName" : "每天日志备份任务", "taskCode" : "backupsTask", "taskCreateDate" : "2018-06-08 00:00:00", "taskExecuteTimes" : 0, "taskFirstExecute" : "1528387200000", "taskFrequency" : "86400000", "taskVersion" : 0, "taskStatus" : true }
-{ "create" : { "_index" : "log_timed_task", "_type" : "LOG_TIMED_TASK", "_id" : "3" } }
+{ "create" : { "_index" : "log_timed_task", "_type" : "doc", "_id" : "3" } }
 { "id" : "3", "taskName" : "每天日志恢复任务", "taskCode" : "recoverTask", "taskCreateDate" : "2018-06-08 00:00:00", "taskExecuteTimes" : 0, "taskFirstExecute" : "1528387200000", "taskFrequency" : "86400000", "taskVersion" : 0, "taskStatus" : true }
-{ "create" : { "_index" : "log_timed_task", "_type" : "LOG_TIMED_TASK", "_id" : "4" } }
+{ "create" : { "_index" : "log_timed_task", "_type" : "doc", "_id" : "4" } }
 { "id" : "4", "taskName" : "每天日志统计任务", "taskCode" : "aggregatePerDayTask", "taskCreateDate" : "2018-06-08 00:00:00", "taskExecuteTimes" : 0, "taskFirstExecute" : "1528387200000", "taskFrequency" : "86400000", "taskVersion" : 0, "taskStatus" : true }

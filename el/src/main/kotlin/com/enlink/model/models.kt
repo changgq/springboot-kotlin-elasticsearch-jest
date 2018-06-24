@@ -3,20 +3,45 @@ package com.enlink.model
 import com.enlink.platform.date2string
 import java.util.*
 
+open class BaseLog {
+    var host: String = ""
+    var port: Int = 0
+    var path: String = ""
+    var message: String = ""
+    var matchText: String = ""
+    var version: String = ""
+    var timestamp: String = ""
+    var logLevel: LogLevel = LogLevel.ERROR
+
+    enum class LogLevel {
+        INFO, WARNING, ERROR
+    }
+
+    fun setLogLevel(v: String) = when (v) {
+        "INFO" -> logLevel = LogLevel.INFO
+        "WARNING" -> logLevel = LogLevel.WARNING
+        else -> logLevel = LogLevel.ERROR
+    }
+}
+
+
 /**
  * 功能描述: 用户日志
  */
 data class UserLog(val userId: String, val userGroup: String,
                    val userName: String, val userAuth: String, val operation: String,
                    val ipAddress: String, val macAddress: String, val logInfo: String,
-                   val logTimeStamp: String, val certificateServer: String, val linkInterface: String)
+                   val logTimeStamp: String, val certificateServer: String, val linkInterface: String,
+                   val deviceType: String
+) : BaseLog()
 
 /**
  * 功能描述: 管理员日志
  */
 data class AdminLog(val userId: String, val userGroup: String,
                     val userName: String, val userAuth: String, val operation: String,
-                    val ipAddress: String, val macAddress: String, val logInfo: String, val logTimeStamp: String)
+                    val ipAddress: String, val macAddress: String, val logInfo: String, val logTimeStamp: String
+) : BaseLog()
 
 /**
  * 功能描述: 资源日志
@@ -25,13 +50,15 @@ data class ResLog(val userGroup: String, val userName: String,
                   val userAuth: String, val status: String, val visitAddress: String, val uri: String,
                   val ip: String, val resourceName: String, val urlHttpProtocal: String,
                   val requestCount: String, val uplinkTraffic: String, val downlinkTraffic: String,
-                  val totalTraffic: String, val responseTime: String, val logTimeStamp: String, val clientInfo: String)
+                  val totalTraffic: String, val responseTime: String, val logTimeStamp: String, val clientInfo: String
+) : BaseLog()
 
 /**
  * 功能描述: 系统日志
  */
 data class SystemLog(val fan: String, val cpu: String,
-                     val operateType: String, val systemMsg: String, val logTimeStamp: String)
+                     val operateType: String, val systemMsg: String, val logTimeStamp: String
+) : BaseLog()
 
 /**
  * 功能描述: 登录日志
@@ -39,7 +66,8 @@ data class SystemLog(val fan: String, val cpu: String,
 data class LoginLog(val deviceType: String, val deviceOS: String, val clientInfo: String,
                     val operation: String, val status: String, val userId: String,
                     val userGroup: String, val userName: String, val userAuth: String, val certificateServer: String,
-                    val linkInterface: String, val macAddress: String, val ipAddress: String)
+                    val linkInterface: String, val macAddress: String, val ipAddress: String
+) : BaseLog()
 
 /**
  * 功能描述: 日志设置信息
@@ -53,8 +81,10 @@ class LogSetting(var id: String = "1",
                  var lastDeleteDate: String = Date().date2string(),         // 已删除日志的最后一天
                  var lastBackupDate: String = Date().date2string(),         // 最后一次日志备份日期
                  var startStatus: Boolean = false,                          // 日志模块开启状态，默认为false
-                 var logTypes: String = LogType.ALL.name,                   // 日志类别，默认所有
-                 var logLevels: String = LogLevel.ALL.name                  // 日志级别，默认所有
+                // 日志类别，默认所有
+                 var logTypes: Array<String> = arrayOf(LogType.RES.name, LogType.USER.name, LogType.ADMIN.name, LogType.SYSTEM.name),
+                // 日志级别，默认所有
+                 var logLevels: Array<String> = arrayOf(LogLevel.INFO.name, LogLevel.WARNING.name, LogLevel.ERROR.name)
 ) {
 
     enum class ConfigType {
@@ -62,11 +92,11 @@ class LogSetting(var id: String = "1",
     }
 
     enum class LogType {
-        ALL, RES, USER, ADMIN, SYSTEM
+        RES, USER, ADMIN, SYSTEM
     }
 
     enum class LogLevel {
-        ALL, INFO, WARNING, ERROR
+        INFO, WARNING, ERROR
     }
 
     fun toMap(): Map<String, Any> {
@@ -84,4 +114,8 @@ class LogSetting(var id: String = "1",
                 "logLevels" to logLevels
         )
     }
+}
+
+fun main(args: Array<String>) {
+    println(LogSetting().toMap())
 }

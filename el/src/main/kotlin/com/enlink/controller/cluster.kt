@@ -1,17 +1,43 @@
 package com.enlink.controller
 
+import com.enlink.config.ElasticsearchProperties
 import com.enlink.platform.CommonResponse
 import com.enlink.platform.GsonUtils
-import org.elasticsearch.client.RestHighLevelClient
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import com.enlink.services.IndexService
+import com.sun.org.apache.xpath.internal.operations.Bool
+import okhttp3.MediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.apache.http.ConnectionClosedException
+import org.apache.http.conn.ConnectTimeoutException
+import org.elasticsearch.action.search.SearchRequest
+import org.elasticsearch.search.aggregations.AggregationBuilders
+import org.elasticsearch.search.aggregations.metrics.max.Max
+import org.elasticsearch.search.aggregations.metrics.min.Min
+import org.elasticsearch.search.builder.SearchSourceBuilder
 import kotlin.system.measureTimeMillis
+import org.apache.http.entity.StringEntity
+import org.apache.http.message.BasicHeader
+import org.elasticsearch.client.Response
+import org.elasticsearch.client.ResponseException
+import org.elasticsearch.client.ResponseListener
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.web.bind.annotation.*
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.nio.charset.Charset
+import java.util.*
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
+import javax.net.ssl.SSLHandshakeException
+
 
 @RestController
 @RequestMapping("/cluster")
 class ClusterController : BaseController() {
+    @Autowired
+    lateinit var indexService: IndexService
 
     /**
      * @api {GET} /api/cluster/info 1_集群基本信息
@@ -37,5 +63,72 @@ class ClusterController : BaseController() {
         }
         LOGGER.info(GsonUtils.convert(data))
         return CommonResponse(data, elapsed_time_)
+    }
+
+    @GetMapping("/getIndexMinDate")
+    fun getIndexMinDate(indexName: String): String {
+        val _request = SearchRequest(indexName)
+                .source(SearchSourceBuilder()
+                        .fetchSource(false)
+                        .aggregation(AggregationBuilders
+                                .min("min")
+                                .field("@timestamp")
+                                .format("yyyy-MM-dd")))
+        LOGGER.info(_request.source().toString())
+        return client.search(_request).aggregations.get<Min>("min").valueAsString
+    }
+
+    @GetMapping("/getIndexMaxDate")
+    fun getIndexMaxDate(indexName: String): String {
+        val _request = SearchRequest(indexName)
+                .source(SearchSourceBuilder()
+                        .fetchSource(false)
+                        .aggregation(AggregationBuilders
+                                .max("max")
+                                .field("@timestamp")
+                                .format("yyyy-MM-dd")))
+        LOGGER.info(_request.source().toString())
+        return client.search(_request).aggregations.get<Max>("max").valueAsString
+    }
+
+    @PostMapping("/reindex")
+    fun reindex(@RequestBody jsons: String): CommonResponse {
+        return CommonResponse(indexService.reindex(jsons), 0)
+    }
+
+    @GetMapping("/existsIndex")
+    fun existsIndex(indices: String): CommonResponse {
+        var resp: Boolean = false
+        val response_time = measureTimeMillis {
+            resp = indexService.existsIndex(indices)
+        }
+        return CommonResponse(resp, response_time)
+    }
+
+    @GetMapping("/deleteIndex")
+    fun deleteIndex(indices: String): CommonResponse {
+        var resp: Boolean = false
+        val response_time = measureTimeMillis {
+            resp = indexService.deleteIndex(indices)
+        }
+        return CommonResponse(resp, response_time)
+    }
+
+    @GetMapping("/openIndex")
+    fun openIndex(indices: String): CommonResponse {
+        var resp: Boolean = false
+        val response_time = measureTimeMillis {
+            resp = indexService.openIndex(indices)
+        }
+        return CommonResponse(resp, response_time)
+    }
+
+    @GetMapping("/closeIndex")
+    fun closeIndex(indices: String): CommonResponse {
+        var resp: Boolean = false
+        val response_time = measureTimeMillis {
+            resp = indexService.closeIndex(indices)
+        }
+        return CommonResponse(resp, response_time)
     }
 }

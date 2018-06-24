@@ -7,6 +7,9 @@
   },
   "mappings": {
     "doc": {
+      "_all": {
+        "enabled": false
+      },
       "_source": {
         "enabled": true
       },
