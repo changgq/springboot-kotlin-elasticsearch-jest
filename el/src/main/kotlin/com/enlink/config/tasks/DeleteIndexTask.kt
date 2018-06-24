@@ -24,7 +24,7 @@ open class DeleteIndexTask {
 
     @Async
     @Scheduled(cron = "0 10 0 * * ?")
-    fun run() {
+    open fun run() {
         // 获取日志存储范围，与当前日期进行比较，获取需要删除的日期
 
         // 根据日期删除/关闭索引

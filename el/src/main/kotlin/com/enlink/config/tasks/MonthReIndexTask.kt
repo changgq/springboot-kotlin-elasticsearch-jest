@@ -25,7 +25,7 @@ open class MonthReIndexTask {
 
     @Async
     @Scheduled(cron = "0 0 0 1 * ?")
-    fun run() {
+    open fun run() {
 
     }
 }

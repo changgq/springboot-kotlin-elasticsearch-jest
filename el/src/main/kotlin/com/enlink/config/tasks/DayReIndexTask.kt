@@ -22,7 +22,7 @@ open class DayReIndexTask{
 
     @Async
     @Scheduled(cron = "0 0 0 1/1 * ? ")
-    fun run() {
+    open fun run() {
 
     }
 }

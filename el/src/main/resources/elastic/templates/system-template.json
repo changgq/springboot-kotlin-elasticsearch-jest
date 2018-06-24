@@ -1,0 +1,95 @@
+{
+  "template": "system_template",
+  "index_patterns": [
+    "system*"
+  ],
+  "order": 1,
+  "settings": {
+    "index.number_of_shards": 1,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "doc": {
+      "_source": {
+        "enabled": true
+      },
+      "dynamic": "strict",
+      "properties": {
+        "@timestamp": {
+          "format": "dd/MMM/yyyy:HH:mm:ss Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+          "type": "date"
+        },
+        "@version": {
+          "type": "keyword"
+        },
+        "cpu": {
+          "type": "keyword"
+        },
+        "disk": {
+          "type": "keyword"
+        },
+        "fan": {
+          "type": "keyword"
+        },
+        "host": {
+          "type": "keyword"
+        },
+        "keyword_log_level": {
+          "type": "keyword"
+        },
+        "log_timestamp": {
+          "format": "dd/MMM/yyyy:HH:mm:ss Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+          "type": "date"
+        },
+        "memory": {
+          "type": "keyword"
+        },
+        "message": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "operate_type": {
+          "type": "keyword"
+        },
+        "overload_warning": {
+          "type": "keyword"
+        },
+        "path": {
+          "type": "keyword"
+        },
+        "server_status": {
+          "type": "keyword"
+        },
+        "system_msg": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "tags": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "temperature": {
+          "type": "keyword"
+        },
+        "type": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}

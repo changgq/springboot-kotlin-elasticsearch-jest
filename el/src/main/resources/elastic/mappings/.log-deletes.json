@@ -30,38 +30,18 @@
         "id": {
           "type": "keyword"
         },
-        "use_third_db": {
+        "log_type": {
+          "type": "keyword"
+        },
+        "index_name": {
+          "type": "keyword"
+        },
+        "delete_date": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "delete_status": {
           "type": "boolean"
-        },
-        "config_type": {
-          "type": "keyword"
-        },
-        "start_save_time": {
-          "type": "date",
-          "format": "yyyy-MM-dd"
-        },
-        "day_rate": {
-          "type": "long"
-        },
-        "count_rate": {
-          "type": "long"
-        },
-        "last_delete_date": {
-          "type": "date",
-          "format": "yyyy-MM-dd"
-        },
-        "last_backups_date": {
-          "type": "date",
-          "format": "yyyy-MM-dd"
-        },
-        "start_status": {
-          "type": "boolean"
-        },
-        "log_types": {
-          "type": "keyword"
-        },
-        "log_levels": {
-          "type": "keyword"
         }
       }
     }

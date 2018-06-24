@@ -24,7 +24,7 @@ open class WeekReIndexTask {
 
     @Async
     @Scheduled(cron = "0 0 0 ? * 2")
-    fun run() {
+    open fun run() {
 
     }
 }

@@ -1,0 +1,92 @@
+{
+  "template": "admin_template",
+  "index_patterns": [
+    "admin*"
+  ],
+  "order": 1,
+  "settings": {
+    "index.number_of_shards": 1,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "doc": {
+      "_source": {
+        "enabled": true
+      },
+      "dynamic": "strict",
+      "properties": {
+        "@timestamp": {
+          "format" : "dd/MMM/yyyy:HH:mm:ss Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+          "type": "date"
+        },
+        "@version": {
+          "type": "keyword"
+        },
+        "host": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "ip_address": {
+          "type": "ip"
+        },
+        "keyword_log_level": {
+          "type": "keyword"
+        },
+        "keyword_user_auth": {
+          "type": "keyword"
+        },
+        "log_info": {
+          "type": "keyword"
+        },
+        "log_timestamp": {
+          "format": "dd/MMM/yyyy:HH:mm:ss Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
+          "type": "date"
+        },
+        "mac_address": {
+          "type": "keyword"
+        },
+        "message": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "operation": {
+          "type": "keyword"
+        },
+        "path": {
+          "type": "keyword"
+        },
+        "port": {
+          "type": "long"
+        },
+        "tags": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "type": {
+          "type": "keyword"
+        },
+        "user_id": {
+          "type": "keyword"
+        },
+        "user_name": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}

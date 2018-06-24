@@ -1,0 +1,121 @@
+{
+  "template": "user_template",
+  "index_patterns": [
+    "user*"
+  ],
+  "order": 1,
+  "settings": {
+    "index.number_of_shards": 1,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "doc": {
+      "_source": {
+        "enabled": true
+      },
+      "dynamic": "strict",
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "@version": {
+          "type": "keyword"
+        },
+        "log_timestamp": {
+          "format": "strict_date_optional_time||epoch_millis",
+          "type": "date"
+        },
+        "user_group": {
+          "type": "keyword"
+        },
+        "user_id": {
+          "type": "keyword"
+        },
+        "user_name": {
+          "type": "keyword"
+        },
+        "certificate_server": {
+          "type": "keyword"
+        },
+        "device_os": {
+          "type": "keyword"
+        },
+        "device_type": {
+          "type": "keyword"
+        },
+        "host": {
+          "type": "ip"
+        },
+        "ip_address": {
+          "type": "ip"
+        },
+        "link_interface": {
+          "type": "keyword"
+        },
+        "log_info": {
+          "type": "keyword"
+        },
+        "keyword_log_level": {
+          "type": "keyword"
+        },
+        "keyword_status": {
+          "type": "keyword"
+        },
+        "keyword_user_auth": {
+          "type": "keyword"
+        },
+        "operation": {
+          "type": "keyword"
+        },
+        "port": {
+          "type": "long"
+        },
+        "tags": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "type": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "client_info": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "mac_address": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "message": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        }
+      }
+    }
+  }
+}

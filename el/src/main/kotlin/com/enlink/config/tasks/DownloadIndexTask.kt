@@ -22,7 +22,7 @@ open class DownloadIndexTask {
 
     @Async
     @Scheduled(cron = "0 30 0 * * ?")
-    fun run() {
+    open fun run() {
         // 判断是否有过日志备份记录
 
         // 若无日志备份记录，则从起始日期开始备份，获取日志起始日期

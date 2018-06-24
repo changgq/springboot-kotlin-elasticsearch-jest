@@ -22,12 +22,12 @@ import kotlin.system.measureTimeMillis
  * 日志恢复记录：.log-recoves
  */
 @Component
-class InitTask {
+open class InitTask {
     val LOGGER: Logger = LoggerFactory.getLogger(this.javaClass)
 
     @Async
     @Scheduled(initialDelay = 5000, fixedDelay = 5000)
-    fun run() {
+    open fun run() {
         LOGGER.info("${Date().datetime2string()} 日志初始化任务开始执行......")
         val usedTimes = measureTimeMillis {
 

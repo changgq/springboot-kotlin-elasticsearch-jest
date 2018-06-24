@@ -27,7 +27,7 @@ data class CommonResponse(val data: Any?,
 object GsonUtils {
     val gb: Gson = GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create()
 
-    fun convert(any: Any): String? {
+    fun convert(any: Any): String {
         return gb.toJson(any)
     }
 
