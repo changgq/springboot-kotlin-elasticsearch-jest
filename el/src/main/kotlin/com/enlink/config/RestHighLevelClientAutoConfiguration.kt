@@ -25,7 +25,6 @@ import org.elasticsearch.client.RestClientBuilder
  */
 @Configuration
 @ConditionalOnClass(RestHighLevelClient::class)
-@EnableConfigurationProperties(ElasticProps::class)
 @AutoConfigureAfter(GsonAutoConfiguration::class)
 open class RestHighLevelClientAutoConfiguration(
         var properties: ElasticProps,

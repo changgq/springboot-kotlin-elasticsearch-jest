@@ -64,15 +64,15 @@ class LogSetting(
         // 已删除日志的最后一天
         @Expose
         @SerializedName("last_delete_date")
-        val lastDeleteDate: String = Date().date2string(),
+        var lastDeleteDate: String = Date().date2string(),
         // 最后一次日志备份日期
         @Expose
         @SerializedName("last_backups_date")
-        val lastBackupsDate: String = Date().date2string(),
+        var lastBackupsDate: String = Date().date2string(),
         // 日志模块开启状态，默认为false
         @Expose
         @SerializedName("start_status")
-        val startStatus: Boolean = false,
+        var startStatus: Boolean = false,
         // 日志类别，默认所有
         @Expose
         @SerializedName("log_types")

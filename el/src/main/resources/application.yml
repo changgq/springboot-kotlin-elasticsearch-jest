@@ -1,15 +1,13 @@
-server:
-  port: 8080
-  servlet:
-    path: /logs/api
+# springboot多环境配置：dev、test、prod，默认：prod；开发环境启动时，设置参数 --spring.profiles.active=dev
+spring.profiles.active: prod
 
-spring:
-  elasticsearch:
-    highclient:
-      uris: ["http://49.4.9.225:9200"]
+server.port: 8080
+server.servlet.path: /logs/api
 
-system:
-  path:
-    tmp: D://Test/tmp/
-    backups: /backups/
-    config: D://Test/tmp/usr/local/enlink/logJson.config
+spring.elasticsearch.highclient.uris: ["http://49.4.9.225:9200"]
+
+# 系统相关文件存放路径，root为根目录，区分开发（dev）、测试（test）、生产（prod）不同的环境，根路径配置不相同
+# system.path.root:
+system.path.tmp: ${system.path.root}/tmp/
+system.path.backups: ${system.path.root}/backups/
+system.path.config: ${system.path.root}/usr/local/enlink/logJson.config

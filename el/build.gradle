@@ -41,6 +41,7 @@ dependencies {
     compile "org.elasticsearch.client:elasticsearch-rest-high-level-client:$vElasticsearch"
     compile "org.elasticsearch:elasticsearch:$vElasticsearch"
     compile "com.google.code.gson:gson:$vGson"
+    compile 'com.google.guava:guava:25.1-jre'
 
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
