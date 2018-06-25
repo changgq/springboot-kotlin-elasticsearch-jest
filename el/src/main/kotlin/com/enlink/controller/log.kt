@@ -1,5 +1,7 @@
 package com.enlink.controller
 
+import com.enlink.config.properties.PathProps
+import com.enlink.dao.DocumentDao
 import com.enlink.model.LogSetting
 import com.enlink.platform.*
 import com.google.gson.GsonBuilder
@@ -16,6 +18,8 @@ import org.elasticsearch.search.aggregations.metrics.min.Min
 import org.elasticsearch.search.aggregations.metrics.sum.Sum
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.elasticsearch.search.sort.SortOrder
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.web.bind.annotation.*
 import java.io.File
 import java.nio.charset.Charset
@@ -57,8 +61,9 @@ class LogController : BaseController() {
  */
 @RestController
 @RequestMapping("/logconfig")
-class LogConfigAction : BaseController() {
-    private val logConfigPath = "d://usr/local/enlink/logJson.config"
+class LogConfigController() : BaseController() {
+    @Autowired
+    lateinit var documentDao: DocumentDao
 
     /**
      * 功能描述: 更新日志设置信息
@@ -70,14 +75,8 @@ class LogConfigAction : BaseController() {
      */
     @RequestMapping("/set", method = arrayOf(RequestMethod.POST))
     fun updateSetting(@RequestBody logSetting: LogSetting): CommonResponse {
-        val rel = client.update(UpdateRequest("log_setting", "LOG_SETTING", logSetting.id).doc(logSetting.toMap()))
-        // 保存日志文件到服务器
-        val f = File(logConfigPath)
-        if (!f.exists()) {
-            f.parentFile.mkdirs()
-        }
-        f.writeText(GsonUtils.convert(logSetting)!!, Charset.defaultCharset())
-        return CommonResponse(rel.status().status == 200)
+        val rel = documentDao.update(".log-setting", logSetting.jsonString())
+        return CommonResponse(rel == 200)
     }
 
     /**
@@ -90,8 +89,8 @@ class LogConfigAction : BaseController() {
      */
     @GetMapping("/get")
     fun get(): CommonResponse {
-        val resp = client.get(GetRequest("log_setting", "LOG_SETTING", "1"))
-        return CommonResponse(GsonUtils.reConvert(resp.sourceAsString, LogSetting::class.java))
+        val resp = documentDao.get(".log-setting")
+        return CommonResponse(GsonUtils.reConvert(resp, LogSetting::class.java))
     }
 }
 

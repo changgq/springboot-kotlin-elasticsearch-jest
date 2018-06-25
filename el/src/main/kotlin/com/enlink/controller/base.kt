@@ -1,5 +1,8 @@
 package com.enlink.controller
 
+import com.enlink.config.properties.PathProps
+import com.enlink.dao.DocumentDao
+import com.enlink.dao.IndexDao
 import com.enlink.model.*
 import com.enlink.platform.*
 import com.sun.org.apache.xpath.internal.operations.Bool

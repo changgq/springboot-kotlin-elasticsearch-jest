@@ -1,58 +1,49 @@
-package com.enlink.services
+package com.enlink.dao
 
-import com.enlink.config.ElasticsearchProperties
+import com.enlink.config.properties.ElasticProps
+import com.enlink.platform.GsonUtils
 import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.elasticsearch.ElasticsearchException
+import org.elasticsearch.action.admin.indices.close.CloseIndexRequest
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest
+import org.elasticsearch.action.admin.indices.open.OpenIndexRequest
+import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.action.support.IndicesOptions
 import org.elasticsearch.client.RestHighLevelClient
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.stereotype.Service
-import java.nio.charset.Charset
-import org.elasticsearch.ElasticsearchException
-import org.elasticsearch.action.DocWriteRequest
-import org.elasticsearch.action.admin.indices.close.CloseIndexRequest
-import org.elasticsearch.rest.RestStatus
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest
-import org.elasticsearch.action.admin.indices.open.OpenIndexRequest
-import org.elasticsearch.action.bulk.BulkRequest
-import org.elasticsearch.action.delete.DeleteRequest
-import org.elasticsearch.action.get.GetRequest
-import org.elasticsearch.action.get.GetResponse
-import org.elasticsearch.action.index.IndexRequest
-import org.elasticsearch.action.index.IndexResponse
-import org.elasticsearch.action.search.SearchRequest
-import org.elasticsearch.action.update.UpdateRequest
-import org.elasticsearch.action.update.UpdateResponse
 import org.elasticsearch.common.xcontent.XContentType
-import org.elasticsearch.index.VersionType
+import org.elasticsearch.rest.RestStatus
 import org.elasticsearch.search.aggregations.AggregationBuilders
 import org.elasticsearch.search.aggregations.metrics.max.Max
-import org.elasticsearch.search.builder.SearchSourceBuilder
-import java.io.File
 import org.elasticsearch.search.aggregations.metrics.min.Min
-
+import org.elasticsearch.search.builder.SearchSourceBuilder
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Component
+import java.io.File
+import java.nio.charset.Charset
 
 /**
  * 功能描述：
  *
  * @auther changgq
- * @date 2018/6/22 22:17
+ * @date 2018/6/25 11:02
  * @description
  */
-@Service
-open class IndexService {
+@Component
+open class IndexDao {
     val LOGGER: Logger = LoggerFactory.getLogger(this.javaClass)
+    val charset: Charset = Charset.defaultCharset()
+    @Autowired
+    lateinit var pros: ElasticProps
     @Autowired
     lateinit var client: RestHighLevelClient
     @Autowired
     lateinit var okHttpClient: OkHttpClient
-    @Autowired
-    lateinit var pros: ElasticsearchProperties
 
     /**
      * 功能描述: 重载索引，将旧索引重新导入到新的索引中
@@ -71,7 +62,7 @@ open class IndexService {
         if (res.isSuccessful) {
             val responseBody = res.body()
             if (responseBody != null) {
-                result = responseBody.source().readString(Charset.forName("UTF-8"))
+                result = responseBody.source().readString(charset)
                 responseBody.close()
             }
         }
@@ -79,11 +70,7 @@ open class IndexService {
     }
 
     fun existsIndex(indices: String): Boolean {
-        val request = GetIndexRequest()
-                .indices(indices)
-                .local(false)
-                .humanReadable(true)
-                .includeDefaults(false)
+        val request = GetIndexRequest().indices(indices)
         return client.indices().exists(request)
     }
 
@@ -136,7 +123,7 @@ open class IndexService {
         if (!existsIndex(indices)) {
             val f = File(this::class.java.classLoader.getResource("elastic/mappings/$indices.json").path)
             if (!f.exists()) throw Exception("Indices $indices create fial, the mappings file is not exists")
-            createIndex(indices, f.readText(Charset.defaultCharset()))
+            createIndex(indices, f.readText())
         }
     }
 
@@ -160,10 +147,10 @@ open class IndexService {
         return response.aggregations.get<Max>("max").value.toLong()
     }
 
-    fun putTemplate(jsons: String): String {
+    fun putTemplate(templateName: String, jsons: String): Boolean {
         val res: okhttp3.Response = okHttpClient.newCall(Request.Builder()
                 .header("Content-Type", "application/json")
-                .url("${pros.uris[0]}/_reindex")
+                .url("${pros.uris[0]}/_template/$templateName")
                 .put(okhttp3.RequestBody.create(MediaType.parse("application/json"), jsons))
                 .build()).execute()
         res.header("Content-Type", "application/json")
@@ -171,65 +158,11 @@ open class IndexService {
         if (res.isSuccessful) {
             val responseBody = res.body()
             if (responseBody != null) {
-                result = responseBody.source().readString(Charset.forName("UTF-8"))
+                result = responseBody.source().readString(charset)
                 responseBody.close()
             }
         }
-        return result
-    }
-}
-
-@Service
-open class DocumentService {
-    val LOGGER: Logger = LoggerFactory.getLogger(this.javaClass)
-    @Autowired
-    lateinit var client: RestHighLevelClient
-
-    /**
-     * 索引
-     */
-    fun index(index: String, jsonString: String, type: String = "doc", id: String = "1") {
-        val request = IndexRequest(index, type, id)
-                .source(jsonString, XContentType.JSON)
-                .opType(DocWriteRequest.OpType.CREATE)
-        try {
-            val response: IndexResponse = client.index(request)
-        } catch (e: ElasticsearchException) {
-            if (e.status() == RestStatus.CONFLICT) {
-                LOGGER.info("索引已存在，索引内容：$index == $type == $id == $jsonString")
-            }
-        }
-    }
-
-    fun get(index: String, type: String = "doc", id: String = "1"): MutableMap<String, Any> {
-        val request = GetRequest(index, type, id)
-        val response: GetResponse = client.get(request)
-        return response.sourceAsMap
-    }
-
-    fun exists(index: String, type: String = "doc", id: String = "1"): Boolean {
-        val request = GetRequest(index, type, id)
-        return client.exists(request)
-    }
-
-    fun delete(index: String, type: String = "doc", id: String = "1"): String {
-        val request = DeleteRequest(index, type, id)
-        request.timeout("2m")
-        val response = client.delete(request)
-        return response.result.name
-    }
-
-    fun update(index: String, jsonString: String, type: String = "doc", id: String = "1"): Int {
-        val request = UpdateRequest(index, type, id)
-        request.doc(jsonString, XContentType.JSON)
-        val response: UpdateResponse = client.update(request)
-        return response.status().status
-    }
-
-    fun bulk(jsonBytesArray: ByteArray): String {
-        val request = BulkRequest()
-        request.add(jsonBytesArray, 0, jsonBytesArray.size, XContentType.JSON)
-        val response = client.bulk(request)
-        return response.buildFailureMessage()
+        val ro = GsonUtils.reConvert(result, Map::class.java)
+        return ro.get("acknowledged") as Boolean
     }
 }

@@ -1,9 +1,8 @@
 package com.enlink.config
 
+import com.enlink.dao.DocumentDao
+import com.enlink.dao.IndexDao
 import com.enlink.model.LogSetting
-import com.enlink.platform.GsonUtils
-import com.enlink.services.DocumentService
-import com.enlink.services.IndexService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -26,9 +25,9 @@ import java.nio.charset.Charset
 class StartInitRunner : CommandLineRunner {
     val LOGGER: Logger = LoggerFactory.getLogger(this.javaClass)
     @Autowired
-    lateinit var indexService: IndexService
+    lateinit var indexDao: IndexDao
     @Autowired
-    lateinit var documentService: DocumentService
+    lateinit var documentDao: DocumentDao
 
     override fun run(vararg args: String?) {
         // 初始化日志设置、日志删除、日志备份、日志恢复、定时任务配置等相关记录到Elasticsearch
@@ -40,7 +39,7 @@ class StartInitRunner : CommandLineRunner {
         // 日志删除记录：.log-deletes
         // 日志恢复记录：.log-recoves
         try {
-            val isExists = documentService.exists(".log-setting", "doc", "1")
+            val isExists = documentDao.exists(".log-setting", "doc", "1")
             LOGGER.info("索引.log-setting中是否存在文档id为1的记录：$isExists")
             if (!isExists) {
                 LOGGER.info("1")
@@ -49,11 +48,11 @@ class StartInitRunner : CommandLineRunner {
                 // 1、创建日志设置索引
                 indices.forEach { x ->
                     LOGGER.info("初始化索引：$x")
-                    indexService.initIndex(x)
+                    indexDao.initIndex(x)
                 }
                 // 2、初始化.log-setting文档
                 LOGGER.info("初始化.log-setting文档")
-                documentService.index(".log-setting", LogSetting().jsonString())
+                documentDao.index(".log-setting", LogSetting().jsonString())
 
                 // 3、初始化模板，包括res-template、user-template、admin-template、system-template
                 LOGGER.info("初始化模板，包括res-template、user-template、admin-template、system-template")
@@ -61,7 +60,9 @@ class StartInitRunner : CommandLineRunner {
                 if (dir.exists()) {
                     val files = dir.listFiles()
                     files.forEach { f ->
-                        val rel = indexService.putTemplate(f.readText(Charset.defaultCharset()))
+                        LOGGER.info(f.name)
+                        val templateName = f.name.replace(".json", "")
+                        val rel = indexDao.putTemplate(templateName, f.readText())
                         LOGGER.info("模板创建成功！结果：$rel")
                     }
                 }
@@ -71,5 +72,4 @@ class StartInitRunner : CommandLineRunner {
         }
         LOGGER.info("初始化日志模块 end!")
     }
-
 }

@@ -7,3 +7,9 @@ spring:
   elasticsearch:
     highclient:
       uris: ["http://49.4.9.225:9200"]
+
+system:
+  path:
+    tmp: D://Test/tmp/
+    backups: /backups/
+    config: D://Test/tmp/usr/local/enlink/logJson.config

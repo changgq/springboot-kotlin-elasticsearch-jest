@@ -1,5 +1,6 @@
 package com.enlink.config
 
+import com.enlink.config.properties.ElasticProps
 import com.google.gson.Gson
 import org.apache.coyote.http11.Constants.a
 import org.elasticsearch.client.RestHighLevelClient
@@ -24,10 +25,10 @@ import org.elasticsearch.client.RestClientBuilder
  */
 @Configuration
 @ConditionalOnClass(RestHighLevelClient::class)
-@EnableConfigurationProperties(ElasticsearchProperties::class)
+@EnableConfigurationProperties(ElasticProps::class)
 @AutoConfigureAfter(GsonAutoConfiguration::class)
 open class RestHighLevelClientAutoConfiguration(
-        var properties: ElasticsearchProperties,
+        var properties: ElasticProps,
         var gsonProvider: ObjectProvider<Gson>,
         var builderCustomizers: ObjectProvider<List<HttpClientConfigBuilderCustomizer>>?
 ) {

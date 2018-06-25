@@ -130,8 +130,8 @@ inline fun String.string2date(): Date {
     return SimpleDateFormat("yyyy-MM-dd").parse(this)
 }
 
-inline fun String.string2datetime(): Date {
-    return SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(this)
+inline fun String.string2datetime(format: String = "yyyy-MM-dd HH:mm:ss"): Date {
+    return SimpleDateFormat(format).parse(this)
 }
 
 inline fun String.checkIsDate(): Boolean {
@@ -209,6 +209,10 @@ object DateTimeUtils {
         cal.time = Date()
         cal.add(Calendar.DATE, 365 * -1)
         return cal.time
+    }
+
+    fun string2Datetime(datetime: String, format: String = "yyyy-MM-dd HH:mm:ss") {
+
     }
 }
 

@@ -1,6 +1,6 @@
 package com.enlink.config.tasks
 
-import com.enlink.services.IndexService
+import com.enlink.dao.IndexDao
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component
 open class DeleteIndexTask {
     val LOGGER: Logger = LoggerFactory.getLogger(this.javaClass)
     @Autowired
-    lateinit var indexService: IndexService
+    lateinit var indexDao: IndexDao
 
 
     @Async

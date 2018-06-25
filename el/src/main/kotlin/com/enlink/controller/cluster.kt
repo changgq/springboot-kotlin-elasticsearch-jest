@@ -1,43 +1,22 @@
 package com.enlink.controller
 
-import com.enlink.config.ElasticsearchProperties
+import com.enlink.dao.IndexDao
 import com.enlink.platform.CommonResponse
 import com.enlink.platform.GsonUtils
-import com.enlink.services.IndexService
-import com.sun.org.apache.xpath.internal.operations.Bool
-import okhttp3.MediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.apache.http.ConnectionClosedException
-import org.apache.http.conn.ConnectTimeoutException
 import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.search.aggregations.AggregationBuilders
 import org.elasticsearch.search.aggregations.metrics.max.Max
 import org.elasticsearch.search.aggregations.metrics.min.Min
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import kotlin.system.measureTimeMillis
-import org.apache.http.entity.StringEntity
-import org.apache.http.message.BasicHeader
-import org.elasticsearch.client.Response
-import org.elasticsearch.client.ResponseException
-import org.elasticsearch.client.ResponseListener
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
-import java.io.IOException
-import java.net.SocketTimeoutException
-import java.nio.charset.Charset
-import java.util.*
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
-import javax.net.ssl.SSLHandshakeException
-
 
 @RestController
 @RequestMapping("/cluster")
 class ClusterController : BaseController() {
     @Autowired
-    lateinit var indexService: IndexService
+    lateinit var indexDao: IndexDao
 
     /**
      * @api {GET} /api/cluster/info 1_集群基本信息
@@ -93,14 +72,14 @@ class ClusterController : BaseController() {
 
     @PostMapping("/reindex")
     fun reindex(@RequestBody jsons: String): CommonResponse {
-        return CommonResponse(indexService.reindex(jsons), 0)
+        return CommonResponse(indexDao.reindex(jsons), 0)
     }
 
     @GetMapping("/existsIndex")
     fun existsIndex(indices: String): CommonResponse {
         var resp: Boolean = false
         val response_time = measureTimeMillis {
-            resp = indexService.existsIndex(indices)
+            resp = indexDao.existsIndex(indices)
         }
         return CommonResponse(resp, response_time)
     }
@@ -109,7 +88,7 @@ class ClusterController : BaseController() {
     fun deleteIndex(indices: String): CommonResponse {
         var resp: Boolean = false
         val response_time = measureTimeMillis {
-            resp = indexService.deleteIndex(indices)
+            resp = indexDao.deleteIndex(indices)
         }
         return CommonResponse(resp, response_time)
     }
@@ -118,7 +97,7 @@ class ClusterController : BaseController() {
     fun openIndex(indices: String): CommonResponse {
         var resp: Boolean = false
         val response_time = measureTimeMillis {
-            resp = indexService.openIndex(indices)
+            resp = indexDao.openIndex(indices)
         }
         return CommonResponse(resp, response_time)
     }
@@ -127,7 +106,7 @@ class ClusterController : BaseController() {
     fun closeIndex(indices: String): CommonResponse {
         var resp: Boolean = false
         val response_time = measureTimeMillis {
-            resp = indexService.closeIndex(indices)
+            resp = indexDao.closeIndex(indices)
         }
         return CommonResponse(resp, response_time)
     }

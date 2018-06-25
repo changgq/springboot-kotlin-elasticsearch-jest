@@ -12,6 +12,4 @@ open class MainClazz
 
 fun main(args: Array<String>) {
     SpringApplication(MainClazz::class.java).run(*args)
-    val name = "changgq"
-    println("System is Running! hello $name!")
 }

@@ -44,23 +44,23 @@ class LogSetting(
         // 是否启用第三方数据库
         @Expose
         @SerializedName("use_third_db")
-        val useThirdDB: Boolean = false,
+        var useThirdDB: Boolean = false,
         // 日志清理类型，按日期、按数量
         @Expose
         @SerializedName("config_type")
-        val configType: String = ConfigType.DATE.name,
+        var configType: String = ConfigType.DATE.name,
         // 日志设置的开始时间（yyyy-MM-dd日期格式）
         @Expose
         @SerializedName("start_save_date")
-        val startSaveDate: String = Date().date2string(),
+        var startSaveDate: String = Date().date2string(),
         // 时间周期
         @Expose
         @SerializedName("day_rate")
-        val dayRate: Long = 90,
+        var dayRate: Long = 90,
         // 条数周期，默认10000
         @Expose
         @SerializedName("count_rate")
-        val countRate: Long = 10000,
+        var countRate: Long = 10000,
         // 已删除日志的最后一天
         @Expose
         @SerializedName("last_delete_date")
