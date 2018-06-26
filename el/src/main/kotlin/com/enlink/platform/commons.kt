@@ -8,6 +8,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.BufferedInputStream
 import java.io.File
+import java.io.InputStream
 import java.lang.reflect.Type
 import java.nio.charset.Charset
 import java.util.zip.CRC32
@@ -31,7 +32,7 @@ object GsonUtils {
         return gb.toJson(any)
     }
 
-    fun <T> reConvert(json: String, clazz: Class<T>?): T {
+    fun <T> reConvert(json: String, clazz: Class<T>): T {
         return gb.fromJson(json, clazz)
     }
 
@@ -48,7 +49,46 @@ object ExcelUtils {
         XLS, XLSX
     }
 
-    fun genExcel(excelType: ExcelType, filePath: String, headers: Array<String>, datas: List<Array<String>>, startIndex: Int = 0, sheetName: String = "sheet1") {
+    fun genExcelByTemplate(srcFilePath: String,
+                 destFilePath: String,
+                 headers: Array<String>,
+                 datas: List<Array<String>>,
+                 startIndex: Int = 0,
+                 sheetName: String = "sheet1",
+                 excelType: ExcelType = ExcelType.XLSX) {
+
+        val srcf = File(srcFilePath)
+        val wb = when (excelType) {
+            ExcelType.XLS -> if (srcf.exists()) HSSFWorkbook(srcf.inputStream()) else HSSFWorkbook()
+            else -> if (srcf.exists()) XSSFWorkbook(srcf.inputStream()) else XSSFWorkbook()
+        }
+        var sheet = wb.getSheet(sheetName)
+        if (null == sheet) sheet = wb.createSheet(sheetName)
+        for (j in 0.rangeTo(datas.size - 1)) {
+            val row = sheet.createRow(startIndex + j)
+            for (k in 0.rangeTo(headers.size - 1)) {
+                row.createCell(k).setCellValue(datas[j][k])
+            }
+        }
+
+        val destf = File(destFilePath)
+        if (!destf.exists()) {
+            destf.parentFile.mkdirs()
+        }
+        wb.write(destf.outputStream())
+
+        wb.close()
+        srcf.inputStream().close()
+        destf.outputStream().close()
+    }
+
+    fun genExcel(filePath: String,
+                 headers: Array<String>,
+                 datas: List<Array<String>>,
+                 startIndex: Int = 0,
+                 sheetName: String = "sheet1",
+                 excelType: ExcelType = ExcelType.XLSX) {
+
         val f = File(filePath)
         val wb = when (excelType) {
             ExcelType.XLS -> if (f.exists()) HSSFWorkbook(f.inputStream()) else HSSFWorkbook()
@@ -66,7 +106,6 @@ object ExcelUtils {
         wb.close()
     }
 }
-
 
 object CommonStringUtils {
     fun hexStringToString(hexStr: String): String {
@@ -95,13 +134,20 @@ class ZipCompressor(val zipPathName: String) {
         zipFile = File(zipPathName)
     }
 
+    /**
+     * 功能描述: 将多个文件压缩进压缩包zipFile
+     */
     fun compress(vararg filePaths: String) {
+        if (!zipFile.exists()) {
+            zipFile.createNewFile()
+        }
         val zipOut = ZipOutputStream(CheckedOutputStream(zipFile.outputStream(), CRC32()))
         filePaths.forEach { it ->
             val f = File(it)
             LOGGER.info("Path==>" + f.path)
             compressFile(f, zipOut, "")
         }
+        zipOut.close()
     }
 
     fun compressFile(f: File, zipOut: ZipOutputStream, baseDir: String) {
@@ -119,7 +165,6 @@ class ZipCompressor(val zipPathName: String) {
                 isWrite = false
             }
             buff.close()
-            zipOut.close()
         }
     }
 }
@@ -137,6 +182,37 @@ object IndexMappings {
             "resLog" to "res",                      // 资源访问日志
             "allLog" to "ALL",                      // 所有日志
             "customAllLog" to "ENLINK_CUSTOM_ALL"   // 所有日志
+    )
+
+    val Index_field_mappings_CN = mapOf<String, String>(
+            "userName" to "用户名",
+            "userGroup" to "用户组",
+            "userAuth" to "用户权限",
+            "date" to "时间",
+            "visitAddress" to "访问地址",
+            "ipAddress" to "ip地址",
+            "macAddress" to "硬件地址",
+            "operation" to "操作",
+            "logInfo" to "日志信息",
+            "linkInterface" to "链接隧道",
+            "certificateServer" to "认证服务器",
+            "status" to "登录状态",
+            "logInfo" to "登录信息",
+            "deviceType" to "登录设备类型",
+            "deviceOS" to "登录设备操作系统",
+            "clientInfo" to "客户端信息",
+            "process" to "进程",
+            "service" to "服务",
+            "resourceName" to "资源名",
+            "uri" to "uri地址",
+            "uploadTraffic" to "上行流量",
+            "downloadTraffic" to "下行流量",
+            "totalTraffic" to "总流量",
+            "visitType" to "访问类型",
+            "fileName" to "文件名",
+            "fileFormat" to "文件格式",
+            "browserInfo" to "浏览器信息",
+            "urlHttp" to "url/http协议"
     )
 
     val Index_field_mappings = mapOf<String, String>(

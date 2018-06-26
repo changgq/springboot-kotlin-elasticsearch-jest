@@ -1,4 +1,4 @@
-package com.enlink.config
+package com.enlink.config.exception
 
 import com.enlink.platform.CommonResponse
 import com.enlink.platform.HttpStatus
@@ -28,3 +28,5 @@ class GlobalException {
                 "[" + HttpStatus.responses[HttpStatus.INTERNAL_SERVER_ERROR] + "]:" + e.message)
     }
 }
+
+class AsyncException(val code: Int, val errorMassage: String) : Exception()

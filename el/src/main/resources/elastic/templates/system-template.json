@@ -5,8 +5,8 @@
   ],
   "order": 1,
   "settings": {
-    "index.number_of_shards": 1,
-    "number_of_replicas": 1
+    "index.number_of_shards": 2,
+    "number_of_replicas": 2
   },
   "mappings": {
     "SYSTEMLOG": {
@@ -16,11 +16,15 @@
       "dynamic": "strict",
       "properties": {
         "@timestamp": {
-          "format": "dd/MMM/yyyy:HH:mm:ss Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
-          "type": "date"
+          "type": "date",
+          "format": "strict_date_optional_time||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||dd/MMM/yyyy:HH:mm:ss Z||epoch_millis"
         },
         "@version": {
           "type": "keyword"
+        },
+        "log_timestamp": {
+          "type": "date",
+          "format": "strict_date_optional_time||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||dd/MMM/yyyy:HH:mm:ss Z||epoch_millis"
         },
         "cpu": {
           "type": "keyword"
@@ -36,10 +40,6 @@
         },
         "keyword_log_level": {
           "type": "keyword"
-        },
-        "log_timestamp": {
-          "format": "dd/MMM/yyyy:HH:mm:ss Z||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis",
-          "type": "date"
         },
         "memory": {
           "type": "keyword"

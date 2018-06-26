@@ -57,26 +57,25 @@ open class InitTask {
     fun checkLogSetting() {
         // {"configType":"DATE","countRate":0,"dayRate":90,"startSaveTime":"2018-05-13T16:00:00.000Z","useThirdDB":false}
         val f = File(props.config)
-//        LOGGER.info("日志文件 ${props.config} 存在吗？${f.exists()}")
+        LOGGER.info("${f.name} ${props.config}")
         if (f.exists()) {
             val _fileCrc3 = Files.asByteSource(f).hash(Hashing.crc32()).toString().toUpperCase()
             val fileCrc3 = params.get("fileCrc3")
-//            LOGGER.info("fileCrc3 = $fileCrc3, _fileCrc3 = $_fileCrc3")
-            // 校验日志文件的CRC3码是否一致，若一致则不需要更新日志设置信息
             if (_fileCrc3 != fileCrc3) {
                 params.put("fileCrc3", _fileCrc3)
-//                LOGGER.info(GsonUtils.convert(params))
                 val jsonString = f.readText()
-//                LOGGER.info("${props.config} == $jsonString")
                 val map: Map<*, *> = GsonUtils.reConvert(jsonString, Map::class.java)
-                if (null != map) {
+                if (map.isNotEmpty()) {
                     val logSetting = GsonUtils.reConvert(documentDao.get(".log-setting"), LogSetting::class.java)
                     logSetting.configType = map.get("configType") as String
                     logSetting.countRate = (map.get("countRate") as Double).toLong()
                     logSetting.dayRate = (map.get("dayRate") as Double).toLong()
                     logSetting.startSaveDate = (map.get("startSaveTime") as String).replace("Z", " UTC").string2datetime("yyyy-MM-dd'T'HH:mm:ss.SSSZ").date2string()
                     logSetting.useThirdDB = map.get("useThirdDB") as Boolean
-                    logSetting.startStatus = map.get("startStatus") as Boolean
+                    if (map.get("startStatus") != null) {
+                        logSetting.startStatus = map.get("startStatus") as Boolean
+                    }
+                    LOGGER.info(logSetting.jsonString())
                     documentDao.update(".log-setting", logSetting.jsonString())
                 }
             }

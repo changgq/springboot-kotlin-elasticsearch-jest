@@ -5,8 +5,8 @@
   ],
   "order": 1,
   "settings": {
-    "index.number_of_shards": 1,
-    "number_of_replicas": 1
+    "index.number_of_shards": 2,
+    "number_of_replicas": 2
   },
   "mappings": {
     "USERLOG": {
@@ -16,14 +16,15 @@
       "dynamic": "strict",
       "properties": {
         "@timestamp": {
-          "type": "date"
+          "type": "date",
+          "format": "strict_date_optional_time||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||dd/MMM/yyyy:HH:mm:ss Z||epoch_millis"
         },
         "@version": {
           "type": "keyword"
         },
         "log_timestamp": {
-          "format": "strict_date_optional_time||epoch_millis",
-          "type": "date"
+          "type": "date",
+          "format": "strict_date_optional_time||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||dd/MMM/yyyy:HH:mm:ss Z||epoch_millis"
         },
         "user_group": {
           "type": "keyword"
@@ -47,7 +48,7 @@
           "type": "ip"
         },
         "ip_address": {
-          "type": "ip"
+          "type": "keyword"
         },
         "link_interface": {
           "type": "keyword"

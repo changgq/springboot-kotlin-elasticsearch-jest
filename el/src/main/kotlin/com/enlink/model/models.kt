@@ -1,7 +1,10 @@
 package com.enlink.model
 
-import com.enlink.platform.date2string
-import java.util.*
+/**
+ * 功能描述: 该文件为初始创建的Bean，后期代码优化或可能删除
+ * @auther changgq
+ * @date 2018/6/26 16:09
+ */
 
 open class BaseLog {
     var host: String = ""

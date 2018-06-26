@@ -225,7 +225,3 @@ open class BaseController {
         return mp
     }
 }
-
-fun main(args: Array<String>) {
-    println(CommonStringUtils.hexStringToString("E69599E5B7A5"))
-}

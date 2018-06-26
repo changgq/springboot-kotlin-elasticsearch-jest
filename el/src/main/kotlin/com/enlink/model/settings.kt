@@ -7,34 +7,6 @@ import com.google.gson.annotations.SerializedName
 import java.util.*
 import kotlin.reflect.full.memberProperties
 
-open class Settings() {
-    enum class ConfigType {
-        DATE, COUNT
-    }
-
-    enum class LogType {
-        RES, USER, ADMIN, SYSTEM
-    }
-
-    enum class LogLevel {
-        INFO, WARNING, ERROR
-    }
-
-    fun toMap(): Map<String, Any?> {
-        return this::class.memberProperties.map { x ->
-            x.name to x.call(this)
-        }.toMap()
-    }
-
-    fun jsonString(pretty: Boolean = false): String {
-        val gsonBuilder = GsonBuilder()
-        if (pretty) gsonBuilder.setPrettyPrinting()                     // 格式化输出（序列化）
-        return gsonBuilder.excludeFieldsWithoutExposeAnnotation()       // 不导出实体中没有用@Expose注解的属性
-                .setDateFormat("yyyy-MM-dd HH:mm:ss")                   //序列化时间转化为特定格式
-                .create().toJson(this)
-    }
-}
-
 /**
  * 日志设置对象
  */
@@ -81,7 +53,7 @@ class LogSetting(
         @Expose
         @SerializedName("log_levels")
         val logLevels: Array<String> = arrayOf(LogLevel.INFO.name, LogLevel.WARNING.name, LogLevel.ERROR.name)
-) : Settings()
+) : BaseModel()
 
 /**
  * 日志备份对象
@@ -110,7 +82,7 @@ class LogBackups(
         @Expose
         @SerializedName("backups_status")
         val backupsStatus: Boolean
-) : Settings()
+) : BaseModel()
 
 class LogDeletes(
         @Expose
@@ -127,7 +99,7 @@ class LogDeletes(
         @Expose
         @SerializedName("delete_status")
         val deleteStatus: Boolean
-) : Settings()
+) : BaseModel()
 
 class LogRecovers(
         @Expose
@@ -153,4 +125,4 @@ class LogRecovers(
         @Expose
         @SerializedName("recover_status")
         val recoverStatus: Boolean
-) : Settings()
+) : BaseModel()

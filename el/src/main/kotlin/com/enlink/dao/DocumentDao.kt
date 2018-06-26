@@ -31,17 +31,20 @@ open class DocumentDao {
     @Autowired
     lateinit var client: RestHighLevelClient
 
-    fun index(index: String, jsonString: String, type: String = "doc", id: String = "1") {
+    fun index(index: String, jsonString: String, type: String = "doc", id: String = "1"): Boolean {
         val request = IndexRequest(index, type, id)
                 .source(jsonString, XContentType.JSON)
                 .opType(DocWriteRequest.OpType.CREATE)
         try {
             val response: IndexResponse = client.index(request)
+            return response.status().status == 200
         } catch (e: ElasticsearchException) {
             if (e.status() == RestStatus.CONFLICT) {
                 LOGGER.info("索引已存在，索引内容：$index == $type == $id == $jsonString")
+                return false
             }
         }
+        return true
     }
 
     fun get(index: String, type: String = "doc", id: String = "1"): String {

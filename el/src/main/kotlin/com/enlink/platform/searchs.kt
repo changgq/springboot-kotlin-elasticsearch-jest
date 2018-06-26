@@ -18,6 +18,13 @@ class Condition(
         val scrollId: String = ""
 ) : Serializable
 
+class DownloadCondition(
+        val preciseConditions: Map<String, Array<String>> = emptyMap(),
+        val ambiguousConditions: Map<String, String> = emptyMap(),
+        val rangeConditionList: List<RangeCondition> = emptyList(),
+        val logType: String
+) : Serializable
+
 /**
  * 功能描述：范围查询条件
  * @auther changgq

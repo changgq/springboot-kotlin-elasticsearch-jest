@@ -90,7 +90,7 @@ open class IndexDao {
     }
 
     fun openIndex(indices: String): Boolean {
-        val request = OpenIndexRequest("index")
+        val request = OpenIndexRequest(indices)
                 .timeout("2m")
                 .indicesOptions(IndicesOptions.lenientExpandOpen())
         val resp = client.indices().open(request)
@@ -98,7 +98,7 @@ open class IndexDao {
     }
 
     fun closeIndex(indices: String): Boolean {
-        val request = CloseIndexRequest("index")
+        val request = CloseIndexRequest(indices)
                 .timeout("2m")
                 .indicesOptions(IndicesOptions.lenientExpandOpen())
         val resp = client.indices().close(request)

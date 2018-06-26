@@ -4,10 +4,12 @@ import com.enlink.config.properties.PathProps
 import com.enlink.dao.DocumentDao
 import com.enlink.model.LogSetting
 import com.enlink.platform.*
+import com.enlink.platform.GsonUtils.reConvert
+import com.enlink.platform.GsonUtils.reConvert2List
+import com.enlink.services.DownloadService
 import com.google.gson.GsonBuilder
-import org.elasticsearch.action.get.GetRequest
+import com.google.gson.reflect.TypeToken
 import org.elasticsearch.action.search.SearchRequest
-import org.elasticsearch.action.update.UpdateRequest
 import org.elasticsearch.script.Script
 import org.elasticsearch.search.aggregations.AggregationBuilder
 import org.elasticsearch.search.aggregations.AggregationBuilders
@@ -19,10 +21,15 @@ import org.elasticsearch.search.aggregations.metrics.sum.Sum
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.elasticsearch.search.sort.SortOrder
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.web.bind.annotation.*
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
 import java.io.File
+import java.lang.reflect.Type
+import java.net.URLDecoder
 import java.nio.charset.Charset
+import java.util.*
+import javax.servlet.http.HttpServletResponse
 import kotlin.system.measureTimeMillis
 
 /**
@@ -31,6 +38,10 @@ import kotlin.system.measureTimeMillis
 @RestController
 @RequestMapping("/log")
 class LogController : BaseController() {
+    @Autowired
+    lateinit var pathProps: PathProps
+    @Autowired
+    lateinit var downloadServie: DownloadService
 
     /**
      * 功能描述: 分页查询日志数据
@@ -53,6 +64,39 @@ class LogController : BaseController() {
         val terms = resp.getAggregations().get<Terms>("distinct")
         val list = List<String>(terms.getBuckets().size, { x -> terms.getBuckets().get(x).keyAsString })
         return CommonResponse(list)
+    }
+
+    @RequestMapping(value = "/zip", method = arrayOf(RequestMethod.GET))
+    fun zip(@RequestParam("match") match: String, response: HttpServletResponse) {
+        try {
+            LOGGER.info(" ------------->> $match")
+            val matchType = object : TypeToken<List<DownloadCondition>>() {}.type
+            val conditions = GsonBuilder().create()
+                    .fromJson<List<DownloadCondition>>(URLDecoder.decode(match, "utf-8"), matchType)
+            // 获取Excel文件
+            val filePaths: Array<String> = downloadServie.download(conditions)
+            LOGGER.info(GsonUtils.convert(filePaths))
+            val zipPath = "${pathProps.tmp}日志下载内容_${Date().datetime2filename()}.zip"
+            LOGGER.info("generate zipPath[$zipPath]")
+
+            // 生成Zip文件
+            ZipCompressor(zipPath).compress(*filePaths)
+
+            // 文件下载
+            val zipf = File(zipPath)
+            val fis = BufferedInputStream(zipf.inputStream())
+            val buffer = ByteArray(fis.available())
+            fis.read(buffer)
+            fis.close()
+            val bufferOut = BufferedOutputStream(response.outputStream)
+            response.contentType = "application/octet-stream"
+            response.setHeader("Content-Disposition", "attachment;filename=${String(zipf.name.toByteArray(Charset.defaultCharset()), Charset.forName("ISO-8859-1"))}")
+            bufferOut.write(buffer)
+            bufferOut.flush()
+            bufferOut.close()
+        } catch (ex: Exception) {
+            ex.printStackTrace()
+        }
     }
 }
 
@@ -90,7 +134,7 @@ class LogConfigController() : BaseController() {
     @GetMapping("/get")
     fun get(): CommonResponse {
         val resp = documentDao.get(".log-setting")
-        return CommonResponse(GsonUtils.reConvert(resp, LogSetting::class.java))
+        return CommonResponse(reConvert(resp, LogSetting::class.java))
     }
 }
 

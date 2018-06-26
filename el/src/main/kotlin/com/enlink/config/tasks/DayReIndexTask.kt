@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.scheduling.annotation.Async
 import org.springframework.scheduling.annotation.Scheduled
+import org.springframework.stereotype.Component
 
 /**
  * 功能描述：每日凌晨（0点）创建日报索引
@@ -14,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled
  * @date 2018/6/23 02:29
  * @description
  */
+@Component
 open class DayReIndexTask {
     val LOGGER: Logger = LoggerFactory.getLogger(this.javaClass)
     @Autowired

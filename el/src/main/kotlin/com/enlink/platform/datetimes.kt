@@ -126,6 +126,10 @@ inline fun Date.datetime2string(): String {
     return SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(this)
 }
 
+inline fun Date.datetime2filename(): String {
+    return SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS").format(this)
+}
+
 inline fun String.string2date(): Date {
     return SimpleDateFormat("yyyy-MM-dd").parse(this)
 }

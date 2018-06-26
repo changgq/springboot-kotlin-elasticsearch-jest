@@ -27,7 +27,7 @@ open class ReIndexTask {
     lateinit var taskService: TaskService
 
     @Async
-    @Scheduled(cron = "0 0 1 * * ?") // 凌晨1点：0 0 1 * * ?
+    @Scheduled(cron = "0 5 15 * * ?") // 凌晨1点：0 0 1 * * ?
     open fun run() {
         val rel = documentDao.get(".log-setting")
         val logSetting = GsonUtils.reConvert(rel, LogSetting::class.java)
