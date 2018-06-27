@@ -50,7 +50,7 @@ open class DocumentDao {
     fun get(index: String, type: String = "doc", id: String = "1"): String {
         val request = GetRequest(index, type, id)
         val response: GetResponse = client.get(request)
-        return response.sourceAsString
+        return if (response.isSourceEmpty) "" else response.sourceAsString
     }
 
     fun exists(index: String, type: String = "doc", id: String = "1"): Boolean {

@@ -70,6 +70,21 @@ object ExcelUtils {
         
         var sheet = wb.getSheet(sheetName)
         if (null == sheet) sheet = wb.createSheet(sheetName)
+
+        // 填写表头
+        if (startIndex == 2) {
+            // 创建第0行表头
+            val row_0 = sheet.createRow(0)
+            for (k in 0.rangeTo(headers.size - 1)) {
+                row_0.createCell(k).setCellValue("")
+            }
+            // 创建第1行表头
+            val row_1 = sheet.createRow(1)
+            for (k in 0.rangeTo(headers.size - 1)) {
+                row_1.createCell(k).setCellValue(headers[k])
+            }
+        }
+
         for (j in 0.rangeTo(datas.size - 1)) {
             val row = sheet.createRow(startIndex + j)
             for (k in 0.rangeTo(headers.size - 1)) {

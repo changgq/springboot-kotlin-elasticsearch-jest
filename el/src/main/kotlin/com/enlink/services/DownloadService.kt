@@ -2,30 +2,14 @@ package com.enlink.services
 
 import com.enlink.config.properties.PathProps
 import com.enlink.platform.*
-import kotlinx.coroutines.experimental.CommonPool
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
 import org.elasticsearch.action.search.SearchRequest
-import org.elasticsearch.action.search.SearchScrollRequest
 import org.elasticsearch.client.RestHighLevelClient
-import org.elasticsearch.common.unit.TimeValue
-import org.elasticsearch.index.query.BoolQueryBuilder
 import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.scheduling.annotation.Async
-import org.springframework.scheduling.annotation.AsyncResult
 import org.springframework.stereotype.Component
-import org.springframework.stereotype.Service
-import java.io.File
-import java.util.*
-import java.util.Random
-import java.util.concurrent.*
-import java.util.concurrent.Callable
-import java.util.concurrent.Executors
-import java.util.concurrent.ExecutorService
 
 
 /**

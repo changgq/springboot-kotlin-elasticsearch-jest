@@ -2,7 +2,6 @@ package com.enlink.config.tasks
 
 import com.enlink.config.properties.PathProps
 import com.enlink.dao.DocumentDao
-import com.enlink.dao.IndexDao
 import com.enlink.model.LogBackups
 import com.enlink.model.LogSetting
 import com.enlink.platform.*
@@ -45,7 +44,7 @@ open class DownloadIndexTask {
     lateinit var downloadService: DownloadService
 
     @Async
-    @Scheduled(cron = "0 10 0 * * ?")
+    @Scheduled(cron = "0 55 21 * * ?")
     open fun run() {
         // 判断是否有过日志备份记录
         LOGGER.info("=============================================")
@@ -77,8 +76,10 @@ open class DownloadIndexTask {
         val date = startDate
         // 查询并备份索引
         val fileName = "$index-${date.date2string()}"
+        LOGGER.info("fileName === $fileName")
         val backupsRecord = documentDao.get(".log-backups", "doc", fileName)
-        if (backupsRecord.isNotBlank()) {
+        LOGGER.info("backupsRecord === $backupsRecord")
+        if (backupsRecord.isNotEmpty()) {
             val br = GsonBuilder().excludeFieldsWithoutExposeAnnotation()       // 不导出实体中没有用@Expose注解的属性
                     .setDateFormat("yyyy-MM-dd HH:mm:ss")                   // 序列化时间转化为特定格式
                     .create().fromJson<LogBackups>(backupsRecord, LogBackups::class.java)
@@ -95,8 +96,8 @@ open class DownloadIndexTask {
             val sheet = xwb.createSheet("sheet1")
             val headerRow = sheet.createRow(0)
             var _keyIndex = 0
-            for ((k, v) in headers) {
-                headerRow.createCell(_keyIndex++).setCellValue(v)
+            for (header in headers) {
+                headerRow.createCell(_keyIndex++).setCellValue(header.value)
             }
 
             var startIndex = 1
@@ -111,7 +112,7 @@ open class DownloadIndexTask {
                     val searchHits = resp.getHits().getHits()
                     searchHits.forEach { sh ->
                         val map = sh.sourceAsMap
-                        val dd = headers.keys.map { h -> map.get(h).toString() }.toTypedArray()
+                        val dd = headers.map { h -> map.get(h.key).toString() }.toTypedArray()
                         dataArrays.add(dd)
                     }
 //                    ExcelUtils.genExcel(backupsPath, headers, dateArrays, startIndex)
