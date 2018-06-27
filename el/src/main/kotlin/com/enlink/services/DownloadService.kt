@@ -32,7 +32,7 @@ class DownloadService {
         conditions.forEach { x ->
             val index = IndexMappings.Index_mappings.get(x.logType)
             val qb = QueryBuilders.boolQuery()
-            qb.must(QueryBuilders.matchQuery("", ""))
+            qb.must(QueryBuilders.matchQuery("log_type", index))
             // 范围查询
             x.rangeConditionList?.forEach { it ->
                 when (it.type) {
@@ -47,7 +47,7 @@ class DownloadService {
             }
             // 查询结果不能超过一年
             val request = SearchRequest()
-                    .indices(index)
+                    .indices(".log-backups")
                     .source(SearchSourceBuilder().query(qb).size(366))
             LOGGER.info("查询条件：${request.source().toString()}")
             val response = client.search(request)
