@@ -10,6 +10,7 @@ import com.enlink.services.DownloadService
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import org.elasticsearch.action.search.SearchRequest
+import org.elasticsearch.common.unit.TimeValue
 import org.elasticsearch.script.Script
 import org.elasticsearch.search.aggregations.AggregationBuilder
 import org.elasticsearch.search.aggregations.AggregationBuilders
@@ -29,6 +30,7 @@ import java.lang.reflect.Type
 import java.net.URLDecoder
 import java.nio.charset.Charset
 import java.util.*
+import java.util.concurrent.TimeUnit
 import javax.servlet.http.HttpServletResponse
 import kotlin.system.measureTimeMillis
 
@@ -74,7 +76,7 @@ class LogController : BaseController() {
             val conditions = GsonBuilder().create()
                     .fromJson<List<DownloadCondition>>(URLDecoder.decode(match, "utf-8"), matchType)
             // 获取Excel文件
-            val filePaths: Array<String> = downloadServie.download(conditions)
+            val filePaths: Array<String> = downloadServie.downloadNew(conditions)
             LOGGER.info(GsonUtils.convert(filePaths))
             val zipPath = "${pathProps.tmp}日志下载内容_${Date().datetime2filename()}.zip"
             LOGGER.info("generate zipPath[$zipPath]")
@@ -154,7 +156,12 @@ class ResourceLogController : BaseController() {
                     .subAggregation(AggregationBuilders.count("appTypeCount").field("app_type.keyword"))
                     .order(BucketOrder.aggregation("appTypeCount", false))
             val request = SearchRequest().indices(indicesName)
-                    .source(SearchSourceBuilder().fetchSource(false).size(0).query(qb).aggregation(aggs))
+                    .source(SearchSourceBuilder()
+                            .fetchSource(false)
+                            .size(0)
+                            .query(qb)
+                            .aggregation(aggs)
+                            .timeout(TimeValue(2, TimeUnit.MINUTES)))
             LOGGER.info(request.toString())
             val buckets = client.search(request).aggregations.get<Terms>("appTypes").buckets
             val _total = buckets.map { it.docCount.toInt() }.sum()
@@ -183,7 +190,12 @@ class ResourceLogController : BaseController() {
                     .order(BucketOrder.aggregation("totalTraffic", false))
 
             val request = SearchRequest().indices(indicesName)
-                    .source(SearchSourceBuilder().fetchSource(false).size(0).query(qb).aggregation(aggs))
+                    .source(SearchSourceBuilder()
+                            .fetchSource(false)
+                            .size(0)
+                            .query(qb)
+                            .aggregation(aggs)
+                            .timeout(TimeValue(2, TimeUnit.MINUTES)))
 
             val buckets = client.search(request).aggregations.get<Terms>("distinct").buckets
             dataMap = mutableMapOf(
@@ -207,7 +219,7 @@ class ResourceLogController : BaseController() {
                     .order(BucketOrder.aggregation("fileFormatCount", false))
             val request = SearchRequest().indices(indicesName)
                     .source(SearchSourceBuilder().fetchSource(false).size(0).query(qb)
-                            .aggregation(aggs))
+                            .aggregation(aggs).timeout(TimeValue(2, TimeUnit.MINUTES)))
             LOGGER.info(request.toString())
             val buckets = client.search(request).aggregations.get<Terms>("distinct").buckets
             val m = buckets.map { it.keyAsString to it.docCount.toInt() }.toMap()
@@ -261,7 +273,10 @@ class ResourceLogController : BaseController() {
                     .subAggregation(AggregationBuilders.sum("totalTraffic").field("long_total_traffic"))
             totalAggr.size(endIndex).order(BucketOrder.aggregation("totalTraffic", false))
             val _dataRequest = SearchRequest().indices("res").source(
-                    SearchSourceBuilder.searchSource().fetchSource(false).size(0).query(qb).aggregation(totalAggr)
+                    SearchSourceBuilder.searchSource()
+                            .fetchSource(false).size(0).query(qb)
+                            .aggregation(totalAggr)
+                            .timeout(TimeValue(2, TimeUnit.MINUTES))
             )
             LOGGER.info("_dataRequest === ${_dataRequest.source().toString()}")
             val searchResponse = client.search(_dataRequest)
@@ -314,7 +329,7 @@ class ResourceLogController : BaseController() {
             }
             val request = SearchRequest().indices(indicesName)
                     .source(SearchSourceBuilder().fetchSource(false).size(0).query(qb)
-                            .aggregation(aggs))
+                            .aggregation(aggs).timeout(TimeValue(2, TimeUnit.MINUTES)))
 
             LOGGER.info(request.toString())
             val buckets = client.search(request).aggregations.get<Terms>("groupby").buckets
@@ -359,7 +374,7 @@ class UserLogController : BaseController() {
                     .subAggregation(AggregationBuilders.count("userNameCount").field("user_name.keyword"))
                     .order(BucketOrder.aggregation("userNameCount", false))
             val searchReq = SearchRequest().indices("user")
-                    .source(SearchSourceBuilder().fetchSource(false).query(qb).aggregation(aggs))
+                    .source(SearchSourceBuilder().fetchSource(false).query(qb).aggregation(aggs).timeout(TimeValue(2, TimeUnit.MINUTES)))
             val buckets = client.search(searchReq).aggregations.get<Terms>("distinct").buckets
             // 将查询结果倒叙排列，前段需要的数据结构
             val xAxis = Array(buckets.size, { x -> buckets[x].keyAsString })
@@ -380,7 +395,8 @@ class UserLogController : BaseController() {
                     .subAggregation(AggregationBuilders.count("deviceOsCount").field("device_os.keyword"))
                     .order(BucketOrder.aggregation("deviceOsCount", false))
             val searchReq = SearchRequest("user")
-                    .source(SearchSourceBuilder().query(qb).aggregation(aggs).fetchSource(false))
+                    .source(SearchSourceBuilder().fetchSource(false)
+                            .query(qb).aggregation(aggs).timeout(TimeValue(2, TimeUnit.MINUTES)))
             val resp = client.search(searchReq)
             val buckets = resp.aggregations.get<Terms>("deviceOs").buckets
             map = buckets.map { it.keyAsString to it.docCount.toInt() }.toMap()
@@ -414,7 +430,7 @@ class UserLogController : BaseController() {
             totalAggr.subAggregation(AggregationBuilders.count("_count").field("@timestamp"))
             totalAggr.size(endIndex).order(BucketOrder.aggregation("_count", false))
             val _dataRequest = SearchRequest().indices("user").source(
-                    SearchSourceBuilder.searchSource().fetchSource(false).size(0).query(qb).aggregation(totalAggr)
+                    SearchSourceBuilder.searchSource().fetchSource(false).size(0).query(qb).aggregation(totalAggr).timeout(TimeValue(2, TimeUnit.MINUTES))
             )
             LOGGER.info("_dataRequest === ${_dataRequest.source().toString()}")
             val searchResponse = client.search(_dataRequest)
@@ -451,7 +467,8 @@ class UserLogController : BaseController() {
 
             val startIndex = (condition.currentPage - 1) * condition.pageSize
             val endIndex = condition.currentPage * condition.pageSize
-            val searchRequest = SearchRequest().indices("user").source(SearchSourceBuilder.searchSource()
+            val searchRequest = SearchRequest().indices("user")
+                    .source(SearchSourceBuilder.searchSource()
                     .from(startIndex).size(endIndex).query(qb).sort("log_timestamp.keyword", SortOrder.DESC))
             val searchResponse = client.search(searchRequest)
             val searchHits = searchResponse.getHits().getHits()

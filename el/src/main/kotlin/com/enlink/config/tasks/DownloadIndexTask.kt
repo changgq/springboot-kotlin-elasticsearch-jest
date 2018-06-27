@@ -7,6 +7,8 @@ import com.enlink.model.LogBackups
 import com.enlink.model.LogSetting
 import com.enlink.platform.*
 import com.enlink.services.DownloadService
+import com.google.gson.GsonBuilder
+import org.apache.poi.xssf.streaming.SXSSFWorkbook
 import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.action.search.SearchScrollRequest
 import org.elasticsearch.client.RestHighLevelClient
@@ -59,11 +61,13 @@ open class DownloadIndexTask {
                 logSetting.logTypes.forEach { x ->
                     backups(x.toLowerCase(), _start_date)
                 }
+
+                // 更新最后备份时间
+                logSetting.lastBackupsDate = _start_date.date2string()
+                documentDao.update(".log-setting", logSetting.jsonString())
                 // 记录日志文件记录
                 _start_date = _start_date + day(1)
             }
-            logSetting.lastBackupsDate = _end_date.date2string()
-            documentDao.update(".log-setting", logSetting.jsonString())
             LOGGER.info("日志备份开始结束！")
         }
     }
@@ -73,47 +77,84 @@ open class DownloadIndexTask {
         val date = startDate
         // 查询并备份索引
         val fileName = "$index-${date.date2string()}"
+        val backupsRecord = documentDao.get(".log-backups", "doc", fileName)
+        if (backupsRecord.isNotBlank()) {
+            val br = GsonBuilder().excludeFieldsWithoutExposeAnnotation()       // 不导出实体中没有用@Expose注解的属性
+                    .setDateFormat("yyyy-MM-dd HH:mm:ss")                   // 序列化时间转化为特定格式
+                    .create().fromJson<LogBackups>(backupsRecord, LogBackups::class.java)
+            if (null != br && br.backupsStatus) {
+                return
+            }
+        }
         val backupsPath = "${pathProps.backups}$index/$fileName.xlsx"
         try {
-//            val tempPath = this::class.java.classLoader.getResource("/temps/${index}Template.xlsx").path
-            var startIndex = 2
+            val headers: Map<String, String> = downloadService.getHeaders(index)
+            // 数据集合
+            val dataArrays = mutableListOf<Array<String>>()
+            val xwb: SXSSFWorkbook = SXSSFWorkbook(10000)
+            val sheet = xwb.createSheet("sheet1")
+            val headerRow = sheet.createRow(0)
+            var _keyIndex = 0
+            for ((k, v) in headers) {
+                headerRow.createCell(_keyIndex++).setCellValue(v)
+            }
+
+            var startIndex = 1
             val request = SearchRequest().indices(index)
                     .source(SearchSourceBuilder()
-                            .query(QueryBuilders.matchQuery("@timestamp", date.date2string())).size(200))
+                            .query(QueryBuilders.matchAllQuery())
+                            .size(200))
                     .scroll(TimeValue(1, TimeUnit.MINUTES))
             var resp = client.search(request)
-            var total = resp.hits.hits.size
-            if (total > 0) {
-                val df = File(backupsPath)
-                if (!df.exists()) {
-                    df.parentFile.mkdirs()
-//                    File(tempPath).copyRecursively(df)
-                }
+            if (resp.hits.hits.size > 0) {
                 do {
                     val searchHits = resp.getHits().getHits()
-                    val dateArrays = mutableListOf<Array<String>>()
-                    val headers = downloadService.getHeaders(index)
                     searchHits.forEach { sh ->
                         val map = sh.sourceAsMap
-                        val dd = headers.map { h -> map.get(h).toString() }.toTypedArray()
-                        dateArrays.add(dd)
+                        val dd = headers.keys.map { h -> map.get(h).toString() }.toTypedArray()
+                        dataArrays.add(dd)
                     }
-                    ExcelUtils.genExcel(backupsPath, headers, dateArrays, startIndex)
+//                    ExcelUtils.genExcel(backupsPath, headers, dateArrays, startIndex)
+                    if (dataArrays.size > 10000) {
+                        for (j in 0.rangeTo(dataArrays.size - 1)) {
+                            val row = sheet.createRow(startIndex + j)
+                            val d = dataArrays[j]
+                            for (k in 0.rangeTo(d.size - 1)) {
+                                row.createCell(k).setCellValue(d[k].toString())
+                            }
+                        }
+                        startIndex = startIndex + dataArrays.size
+                        // 清楚数据，释放内存
+                        dataArrays.clear()
+                        println("startIndex ======================================== $startIndex ======= ${Date().datetime2string()}")
+                    }
                     resp = client.searchScroll(SearchScrollRequest().scrollId(resp.scrollId).scroll(TimeValue(1, TimeUnit.MINUTES)))
-                    total = resp.hits.hits.size
-                    startIndex = startIndex + dateArrays.size
-                } while (total > 0)
+                } while (resp.hits.hits.size > 0)
             }
-            val backupsStatus = true
-            val f = File(backupsPath)
-            val logBackups = LogBackups(UUID.randomUUID().toString(),
-                    index,
-                    date.date2string(),
-                    1,
-                    fileName,
-                    backupsPath,
-                    f.length(),
-                    backupsStatus)
+            if (dataArrays.size > 0) {
+                startIndex = startIndex + dataArrays.size
+                for (j in 0.rangeTo(dataArrays.size - 1)) {
+                    val row = sheet.createRow(startIndex + j)
+                    val d = dataArrays[j]
+                    for (k in 0.rangeTo(d.size - 1)) {
+                        row.createCell(k).setCellValue(d[k].toString())
+                    }
+                }
+                println("startIndex ======================================== $startIndex ======= ${Date().datetime2string()}")
+                println("数据处理完成，dataArrays size: ${dataArrays.size}")
+                // 清楚数据，释放内存
+                dataArrays.clear()
+            }
+            val df = File(backupsPath)
+            if (!df.exists()) {
+                df.parentFile.mkdirs()
+            }
+            xwb.write(df.outputStream())
+            xwb.close()
+
+            df.outputStream().close()
+
+            val logBackups = LogBackups(fileName, index, date.date2string(), 1, fileName, backupsPath, df.length(), true)
             documentDao.index(".log-backups", logBackups.jsonString(), "doc", logBackups.id)
         } catch (e: Exception) {
             e.printStackTrace()

@@ -8,13 +8,18 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.BufferedInputStream
 import java.io.File
-import java.io.InputStream
 import java.lang.reflect.Type
 import java.nio.charset.Charset
 import java.util.zip.CRC32
 import java.util.zip.CheckedOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import org.apache.poi.ss.util.CellRangeAddress
+import java.util.HashMap
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.hssf.usermodel.*;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook
+
 
 data class CommonResponse(val data: Any?,
                           val response_time: Long = 0,
@@ -49,39 +54,6 @@ object ExcelUtils {
         XLS, XLSX
     }
 
-    fun genExcelByTemplate(srcFilePath: String,
-                 destFilePath: String,
-                 headers: Array<String>,
-                 datas: List<Array<String>>,
-                 startIndex: Int = 0,
-                 sheetName: String = "sheet1",
-                 excelType: ExcelType = ExcelType.XLSX) {
-
-        val srcf = File(srcFilePath)
-        val wb = when (excelType) {
-            ExcelType.XLS -> if (srcf.exists()) HSSFWorkbook(srcf.inputStream()) else HSSFWorkbook()
-            else -> if (srcf.exists()) XSSFWorkbook(srcf.inputStream()) else XSSFWorkbook()
-        }
-        var sheet = wb.getSheet(sheetName)
-        if (null == sheet) sheet = wb.createSheet(sheetName)
-        for (j in 0.rangeTo(datas.size - 1)) {
-            val row = sheet.createRow(startIndex + j)
-            for (k in 0.rangeTo(headers.size - 1)) {
-                row.createCell(k).setCellValue(datas[j][k])
-            }
-        }
-
-        val destf = File(destFilePath)
-        if (!destf.exists()) {
-            destf.parentFile.mkdirs()
-        }
-        wb.write(destf.outputStream())
-
-        wb.close()
-        srcf.inputStream().close()
-        destf.outputStream().close()
-    }
-
     fun genExcel(filePath: String,
                  headers: Array<String>,
                  datas: List<Array<String>>,
@@ -94,6 +66,8 @@ object ExcelUtils {
             ExcelType.XLS -> if (f.exists()) HSSFWorkbook(f.inputStream()) else HSSFWorkbook()
             else -> if (f.exists()) XSSFWorkbook(f.inputStream()) else XSSFWorkbook()
         }
+
+        
         var sheet = wb.getSheet(sheetName)
         if (null == sheet) sheet = wb.createSheet(sheetName)
         for (j in 0.rangeTo(datas.size - 1)) {
@@ -104,6 +78,47 @@ object ExcelUtils {
         }
         wb.write(f.outputStream())
         wb.close()
+    }
+
+    /**
+     * 此方法生成表头并写入表头名称
+     *
+     * @param nodes 节点
+     * @param sheet 工作簿
+     * @param style 单元格样式
+     * @return 数据加载开始行
+     */
+//    fun generateHeader(nodes: List<HeaderNode>, sheet: Sheet, style: CellStyle): Int {
+//        val hssfRowMap = HashMap<RowKey, Row>()
+//        var dataStartRow = 0
+//        for (node in nodes) {
+//            if (!(node.firstRow == node.lastCol || node.firstCol == node.lastCol)) {
+//                val cra = CellRangeAddress(node.firstRow, node.lastRow,
+//                        node.firstCol, node.lastCol)
+//                sheet.addMergedRegion(cra)
+//            }
+//            dataStartRow = if (dataStartRow >= node.lastRow) dataStartRow else node.lastRow
+//            val key = RowKey()
+//            key.setFirstRow(node.firstRow)
+//            key.setLastRow(node.lastRow)
+//            var row: Row? = hssfRowMap[key]
+//            if (null == row) {
+//                row = sheet.createRow(node.firstRow)
+//                hssfRowMap[key] = row
+//            }
+//            val cell = row!!.createCell(node.firstCol)
+//            cell.setCellValue(node.name)
+//            cell.setCellStyle(style)
+//        }
+//        return dataStartRow + 1
+//    }
+
+    class HeaderNode {
+        var name: String? = null
+        var firstRow: Int = 0
+        var lastRow: Int = 0
+        var firstCol: Int = 0
+        var lastCol: Int = 0
     }
 }
 
