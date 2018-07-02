@@ -5,20 +5,23 @@ import com.enlink.dao.DocumentDao
 import com.enlink.model.LogSetting
 import com.enlink.platform.*
 import com.enlink.platform.GsonUtils.reConvert
-import com.enlink.platform.GsonUtils.reConvert2List
 import com.enlink.services.DownloadService
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import org.elasticsearch.action.search.SearchRequest
+import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.common.unit.TimeValue
+import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.script.Script
 import org.elasticsearch.search.aggregations.AggregationBuilder
 import org.elasticsearch.search.aggregations.AggregationBuilders
 import org.elasticsearch.search.aggregations.BucketOrder
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval
 import org.elasticsearch.search.aggregations.bucket.terms.Terms
 import org.elasticsearch.search.aggregations.metrics.max.Max
 import org.elasticsearch.search.aggregations.metrics.min.Min
 import org.elasticsearch.search.aggregations.metrics.sum.Sum
+import org.elasticsearch.search.aggregations.metrics.valuecount.ValueCount
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.elasticsearch.search.sort.SortOrder
 import org.springframework.beans.factory.annotation.Autowired
@@ -26,7 +29,6 @@ import org.springframework.web.bind.annotation.*
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
-import java.lang.reflect.Type
 import java.net.URLDecoder
 import java.nio.charset.Charset
 import java.util.*
@@ -99,6 +101,280 @@ class LogController : BaseController() {
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
+    }
+
+    /**
+     * 功能描述: 用户登录次数top5
+     */
+    @RequestMapping(value = "/loginTopCount", method = arrayOf(RequestMethod.POST))
+    fun loginTopCount(@RequestBody rangeCondition: RangeCondition, topCount: Int = 5): CommonResponse {
+        var dataArrays = mutableListOf<Map<String, Any>>()
+        val expose_time = measureTimeMillis {
+            val aggs = AggregationBuilders
+                    .terms("login_count")
+                    .field("user_name.keyword")
+                    .size(topCount)
+            val response = userRangeSearch(rangeCondition, "", aggs)
+            val buckets = response.aggregations.get<Terms>("login_count").buckets
+            buckets.forEach {
+
+                val userName = it.keyAsString
+                // 根据用户名查询用户总流量
+                val aggs = AggregationBuilders
+                        .sum("sum_total_traffic")
+                        .field("long_total_traffic")
+                val resp = resFlowResponse(rangeCondition, userName, aggs)
+                val flow = resp.aggregations.get<Sum>("sum_total_traffic").value
+
+                dataArrays.add(mapOf<String, Any>(
+                        "name" to userName,
+                        "count" to it.docCount,
+                        "flow" to flow
+                ))
+            }
+        }
+        return CommonResponse(dataArrays, expose_time)
+    }
+
+    /**
+     * 功能描述: 用户流量top5
+     */
+    @RequestMapping(value = "/trafficTopCount", method = arrayOf(RequestMethod.POST))
+    fun trafficTopCount(@RequestBody rangeCondition: RangeCondition, topCount: Int = 5): CommonResponse {
+        var dataArrays = mutableListOf<Map<String, Any>>()
+        val expose_time = measureTimeMillis {
+            val aggs = AggregationBuilders
+                    .terms("user_names")
+                    .field("user_name.keyword")
+                    .subAggregation(AggregationBuilders.sum("total_traffic")
+                            .field("long_total_traffic"))
+                    .size(topCount)
+                    .order(BucketOrder.aggregation("total_traffic", false))
+            val resp = resFlowResponse(rangeCondition, "", aggs)
+            val buckets = resp.aggregations.get<Terms>("user_names").buckets
+            buckets.forEach {
+                // 根据用户名获取用户登录次数
+                val userName = it.keyAsString
+                val aggs = AggregationBuilders
+                        .count("login_count")
+                        .field("user_name.keyword")
+                val response = userRangeSearch(rangeCondition, userName, aggs)
+                val loginCount = response.aggregations.get<ValueCount>("login_count").value
+
+                dataArrays.add(mapOf<String, Any>(
+                        "name" to userName,
+                        "count" to loginCount,
+                        "flow" to it.aggregations.get<Sum>("total_traffic").value
+                ))
+            }
+
+
+        }
+        return CommonResponse(dataArrays, expose_time)
+    }
+
+    /**
+     * 功能描述：用户登录总次数
+     */
+    @RequestMapping(value = "/totalLoginCount", method = arrayOf(RequestMethod.POST))
+    fun totalLoginCount(@RequestBody rangeCondition: RangeCondition): CommonResponse {
+        var loginCount = 0L
+        val expose_time = measureTimeMillis {
+            val aggs = AggregationBuilders
+                    .count("login_count")
+                    .field("user_name.keyword")
+            val response = userRangeSearch(rangeCondition, "", aggs)
+            loginCount = response.aggregations.get<ValueCount>("login_count").value
+        }
+        return CommonResponse(loginCount, expose_time)
+    }
+
+    fun userRangeSearch(rangeCondition: RangeCondition, userName: String, aggs: AggregationBuilder): SearchResponse {
+        val qb = QueryBuilders.boolQuery()
+        if (userName.isNotBlank()) {
+            qb.must(QueryBuilders.matchQuery("user_name.keyword", userName))
+        }
+        qb.must(QueryBuilders.matchQuery("operation", "LOGIN"))
+        qb.must(QueryBuilders.matchQuery("keyword_status", "SUCCESS"))
+        qb.must(QueryBuilders.rangeQuery("@timestamp")
+                .gt(rangeCondition.gteValue)
+                .lte(rangeCondition.lteValue)
+                .timeZone(rangeCondition.timeZone))
+        val source = SearchSourceBuilder()
+                .size(0)
+                .fetchSource(false)
+                .query(qb)
+                .aggregation(aggs)
+        val request = SearchRequest()
+                .indices(IndexMappings.Index_mappings.get("userLog"))
+                .source(source)
+        LOGGER.info(request.source().toString())
+        return client.search(request)
+    }
+
+    /**
+     * 功能描述: 用户总流量/应用总流量
+     */
+    @RequestMapping(value = "/resTotalFlow", method = arrayOf(RequestMethod.POST))
+    fun resTotalFlow(@RequestBody rangeCondition: RangeCondition): CommonResponse {
+        var totalFlow = 0.0
+        val expose_time = measureTimeMillis {
+            totalFlow = userResFlowSearch(rangeCondition, "")
+        }
+        return CommonResponse(totalFlow, expose_time)
+    }
+
+    /**
+     * 功能描述: 资源访问量top5
+     */
+    @RequestMapping(value = "/resAccessTotalTopCount", method = arrayOf(RequestMethod.POST))
+    private fun resAccessTotalTopCount(@RequestBody rangeCondition: RangeCondition, topCount: Int = 5): CommonResponse {
+        var dataArrays = mutableListOf<Map<String, Any>>()
+        val expose_time = measureTimeMillis {
+            val aggs = AggregationBuilders
+                    .terms("res_total")
+                    .field("resource_name.keyword")
+                    .size(topCount)
+            val response = resFlowResponse(rangeCondition, "", aggs)
+            val buckets = response.aggregations.get<Terms>("res_total").buckets
+            buckets.forEach {
+                dataArrays.add(mapOf(
+                        "name" to it.keyAsString,
+                        "value" to it.docCount
+                ))
+            }
+        }
+        return CommonResponse(dataArrays, expose_time)
+    }
+
+    /**
+     * 功能描述: 资源流量top5
+     */
+    @RequestMapping(value = "/resTotalTopCount", method = arrayOf(RequestMethod.POST))
+    private fun resTotalTopCount(@RequestBody rangeCondition: RangeCondition, topCount: Int = 5): CommonResponse {
+        var dataArrays = mutableListOf<Map<String, Any>>()
+        val expose_time = measureTimeMillis {
+            val aggs = AggregationBuilders
+                    .terms("res_flow_total")
+                    .field("resource_name.keyword")
+                    .size(topCount)
+                    .subAggregation(AggregationBuilders
+                            .sum("flow_total")
+                            .field("long_total_traffic"))
+                    .order(BucketOrder.aggregation("flow_total", false))
+            val response = resFlowResponse(rangeCondition, "", aggs)
+            val buckets = response.aggregations.get<Terms>("res_flow_total").buckets
+            buckets.forEach {
+                dataArrays.add(mapOf(
+                        "name" to it.keyAsString,
+                        "value" to it.aggregations.get<Sum>("flow_total").value
+                ))
+            }
+        }
+        return CommonResponse(dataArrays, expose_time)
+    }
+
+    /**
+     * 功能描述: 根据年、月、日，或者时间范围获取资源总数
+     */
+    @RequestMapping(value = "/resTotal", method = arrayOf(RequestMethod.POST))
+    private fun resTotal(@RequestBody rangeCondition: RangeCondition): CommonResponse {
+        var data = 0L
+        val expose_time = measureTimeMillis {
+            val aggs = AggregationBuilders
+                    .count("res_total")
+                    .field("resource_name.keyword")
+            val response = resFlowResponse(rangeCondition, "", aggs)
+            data = response.aggregations.get<ValueCount>("res_total").value
+        }
+        return CommonResponse(data, expose_time)
+    }
+
+    fun userResFlowSearch(rangeCondition: RangeCondition, userName: String): Double {
+        val aggs = AggregationBuilders
+                .sum("user_flow_total")
+                .field("long_total_traffic")
+        val response = resFlowResponse(rangeCondition, "", aggs)
+        return response.aggregations.get<Sum>("user_flow_total").value
+    }
+
+
+    fun resFlowResponse(rangeCondition: RangeCondition, userName: String, aggs: AggregationBuilder): SearchResponse {
+        val qb = QueryBuilders.boolQuery()
+        if (userName.isNotBlank()) {
+            qb.must(QueryBuilders.matchQuery("user_name", userName))
+        }
+        qb.must(QueryBuilders.rangeQuery("@timestamp")
+                .gt(rangeCondition.gteValue)
+                .lte(rangeCondition.lteValue)
+                .timeZone(rangeCondition.timeZone))
+        val source = SearchSourceBuilder()
+                .size(0)
+                .fetchSource(false)
+                .query(qb)
+                .aggregation(aggs)
+        val request = SearchRequest()
+                .indices(IndexMappings.Index_mappings.get("resLog"))
+                .source(source)
+        LOGGER.info(request.source().toString())
+        return client.search(request)
+    }
+
+
+    /**
+     * 功能描述: 获取当天的网卡流量图
+     */
+    @RequestMapping(value = "/getNetworkTraffic", method = arrayOf(RequestMethod.GET, RequestMethod.POST))
+    fun getNetworkTraffic(): CommonResponse {
+        val qb = QueryBuilders.boolQuery()
+        qb.must(QueryBuilders.rangeQuery("@timestamp")
+                .format("yyyy-MM-dd HH:mm:ss")
+                .timeZone("Asia/Shanghai")
+                .from("${Date().date2string()} 00:00:00")
+                .to("${Date().datetime2string()}"))
+
+//        val aggs = AggregationBuilders
+//                .terms("network")
+//                .field("system.network.name")
+//                .size(100)
+//                .subAggregation(AggregationBuilders.max("_key").field("@timestamp").format("yyyy-MM-dd HH:mm"))
+//                .subAggregation(AggregationBuilders.max("lastInNetFlow").field("system.network.in.bytes"))
+//                .subAggregation(AggregationBuilders.max("lastOutNetFlow").field("system.network.out.bytes"))
+//                .order(BucketOrder.aggregation("_key", true))
+
+        val aggs = AggregationBuilders.max("max").field("system.network.in.bytes")
+                .subAggregation(AggregationBuilders.dateHistogram("network_per_days")
+                        .field("@timestamp")
+                        .dateHistogramInterval(DateHistogramInterval.DAY)
+                        .interval(1)
+                        .format("yyyy-MM-dd HH:mm"))
+
+        val rq = SearchRequest().indices("metricbeat-*")
+                .source(SearchSourceBuilder.searchSource().fetchSource(false).size(0)
+                        .query(qb).aggregation(aggs))
+        LOGGER.info(rq.source().toString())
+        val searchResp = client.search(rq)
+        val buckets = searchResp.aggregations.get<Terms>("network").buckets
+
+        var allIn = 0.0
+        var allOut = 0.0
+        var time = ""
+        buckets.forEach { it ->
+            time = it.aggregations.get<Max>("_key").valueAsString
+            allIn += it.aggregations.get<Max>("lastInNetFlow").valueAsString.toDouble()
+            allOut += it.aggregations.get<Max>("lastOutNetFlow").valueAsString.toDouble()
+        }
+
+        val allFlow = allIn + allOut
+
+        val data = listOf(mapOf(
+                "time" to time,
+                "allIn" to allIn,
+                "allOut" to allOut,
+                "allFlow" to allFlow
+        ))
+
+        return CommonResponse(data)
     }
 }
 
@@ -469,7 +745,7 @@ class UserLogController : BaseController() {
             val endIndex = condition.currentPage * condition.pageSize
             val searchRequest = SearchRequest().indices("user")
                     .source(SearchSourceBuilder.searchSource()
-                    .from(startIndex).size(endIndex).query(qb).sort("log_timestamp.keyword", SortOrder.DESC))
+                            .from(startIndex).size(endIndex).query(qb).sort("log_timestamp.keyword", SortOrder.DESC))
             val searchResponse = client.search(searchRequest)
             val searchHits = searchResponse.getHits().getHits()
             val list = List<Map<String, Any?>>(searchHits.size, { x ->

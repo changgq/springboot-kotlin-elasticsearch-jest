@@ -33,15 +33,19 @@ class DownloadService {
             val index = IndexMappings.Index_mappings.get(x.logType)
             val qb = QueryBuilders.boolQuery()
             qb.must(QueryBuilders.matchQuery("log_type", index))
+//            qb.must(QueryBuilders.queryStringQuery("strQuery")
+//                    .defaultField("id").field("file_name").fuzzyMaxExpansions())
             // 范围查询
-            x.rangeConditionList?.forEach { it ->
-                when (it.type) {
-                    RangeCondition.Type.DATE -> {
-                        qb.must(QueryBuilders.rangeQuery("backups_date").gte(it.gteValue).lte(it.lteValue)
-                                .timeZone(it.timeZone))
-                    }
-                    else -> {
-                        qb.must(QueryBuilders.rangeQuery(IndexMappings.Index_field_mappings[it.conditionName]).gte(it.gteValue).lte(it.lteValue))
+            if (x.rangeConditionList.isNotEmpty()) {
+                x.rangeConditionList.forEach { it ->
+                    when (it.type) {
+                        RangeCondition.Type.DATE -> {
+                            qb.must(QueryBuilders.rangeQuery("backups_date").gte(it.gteValue).lte(it.lteValue)
+                                    .timeZone(it.timeZone))
+                        }
+                        else -> {
+                            qb.must(QueryBuilders.rangeQuery(IndexMappings.Index_field_mappings[it.conditionName]).gte(it.gteValue).lte(it.lteValue))
+                        }
                     }
                 }
             }

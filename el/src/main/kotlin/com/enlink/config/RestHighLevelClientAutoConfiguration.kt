@@ -18,6 +18,8 @@ import org.apache.http.HttpHost
 import org.elasticsearch.client.RestClient
 import org.elasticsearch.client.RestClient.builder
 import org.elasticsearch.client.RestClientBuilder
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Springboot自动注入Elasticsearch的RestHighLevelClient客户端
@@ -31,6 +33,8 @@ open class RestHighLevelClientAutoConfiguration(
         var gsonProvider: ObjectProvider<Gson>,
         var builderCustomizers: ObjectProvider<List<HttpClientConfigBuilderCustomizer>>?
 ) {
+    val LOGGER : Logger = LoggerFactory.getLogger(RestHighLevelClientAutoConfiguration::class.java)
+
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
     open fun highLevelClient(): RestHighLevelClient {
@@ -38,6 +42,7 @@ open class RestHighLevelClientAutoConfiguration(
     }
 
     private fun createClients(): RestClientBuilder {
+        LOGGER.info("集群地址：${properties.uris.get(0)}")
         return RestClient.builder(*Array<HttpHost>(properties.uris.size, { x -> HttpHost.create(properties.uris.get(x)) }))
     }
 }

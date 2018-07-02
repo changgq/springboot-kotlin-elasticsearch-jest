@@ -1,1 +1,3 @@
+# 设置elastic集群地址
+spring.elasticsearch.highclient.uris: ["http://127.0.0.1:9200"]
 system.path.root:

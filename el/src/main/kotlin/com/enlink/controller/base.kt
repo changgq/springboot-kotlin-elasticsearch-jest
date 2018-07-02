@@ -6,6 +6,7 @@ import com.enlink.dao.IndexDao
 import com.enlink.model.*
 import com.enlink.platform.*
 import com.sun.org.apache.xpath.internal.operations.Bool
+import okhttp3.OkHttpClient
 import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.client.RestHighLevelClient
 import org.elasticsearch.common.xcontent.XContentHelper
@@ -50,6 +51,8 @@ open class BaseController {
 
     @Autowired
     lateinit var client: RestHighLevelClient
+    @Autowired
+    lateinit var okHttpClient: OkHttpClient
 
     /**
      * 功能描述: 执行查询
