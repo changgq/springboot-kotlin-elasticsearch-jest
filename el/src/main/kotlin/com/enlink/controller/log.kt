@@ -1,5 +1,8 @@
 package com.enlink.controller
 
+import com.alibaba.fastjson.JSON
+import com.alibaba.fastjson.JSONArray
+import com.alibaba.fastjson.JSONObject
 import com.enlink.config.properties.PathProps
 import com.enlink.dao.DocumentDao
 import com.enlink.model.LogSetting
@@ -8,6 +11,8 @@ import com.enlink.platform.GsonUtils.reConvert
 import com.enlink.services.DownloadService
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType
+import okhttp3.Request
 import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.common.unit.TimeValue
@@ -24,16 +29,19 @@ import org.elasticsearch.search.aggregations.metrics.sum.Sum
 import org.elasticsearch.search.aggregations.metrics.valuecount.ValueCount
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.elasticsearch.search.sort.SortOrder
+import org.joda.time.DateTimeZone
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
+import java.math.BigDecimal
 import java.net.URLDecoder
 import java.nio.charset.Charset
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.servlet.http.HttpServletResponse
+import kotlin.streams.toList
 import kotlin.system.measureTimeMillis
 
 /**
@@ -326,55 +334,170 @@ class LogController : BaseController() {
      */
     @RequestMapping(value = "/getNetworkTraffic", method = arrayOf(RequestMethod.GET, RequestMethod.POST))
     fun getNetworkTraffic(): CommonResponse {
-        val qb = QueryBuilders.boolQuery()
-        qb.must(QueryBuilders.rangeQuery("@timestamp")
-                .format("yyyy-MM-dd HH:mm:ss")
-                .timeZone("Asia/Shanghai")
-                .from("${Date().date2string()} 00:00:00")
-                .to("${Date().datetime2string()}"))
+        val inBytes = getNetworkInBytes()
+        val outBytes = getNetworkOutBytes()
+        val rm = mutableMapOf<String, Any>()
+        rm.put("xAxis", inBytes.keys)
+        rm.put("yAxisIn", inBytes.values)
+        rm.put("yAxisOut", outBytes.values)
+        return CommonResponse(rm)
+    }
 
-//        val aggs = AggregationBuilders
-//                .terms("network")
-//                .field("system.network.name")
-//                .size(100)
-//                .subAggregation(AggregationBuilders.max("_key").field("@timestamp").format("yyyy-MM-dd HH:mm"))
-//                .subAggregation(AggregationBuilders.max("lastInNetFlow").field("system.network.in.bytes"))
-//                .subAggregation(AggregationBuilders.max("lastOutNetFlow").field("system.network.out.bytes"))
-//                .order(BucketOrder.aggregation("_key", true))
-
-        val aggs = AggregationBuilders.max("max").field("system.network.in.bytes")
-                .subAggregation(AggregationBuilders.dateHistogram("network_per_days")
-                        .field("@timestamp")
-                        .dateHistogramInterval(DateHistogramInterval.DAY)
-                        .interval(1)
-                        .format("yyyy-MM-dd HH:mm"))
-
-        val rq = SearchRequest().indices("metricbeat-*")
-                .source(SearchSourceBuilder.searchSource().fetchSource(false).size(0)
-                        .query(qb).aggregation(aggs))
-        LOGGER.info(rq.source().toString())
-        val searchResp = client.search(rq)
-        val buckets = searchResp.aggregations.get<Terms>("network").buckets
-
-        var allIn = 0.0
-        var allOut = 0.0
-        var time = ""
-        buckets.forEach { it ->
-            time = it.aggregations.get<Max>("_key").valueAsString
-            allIn += it.aggregations.get<Max>("lastInNetFlow").valueAsString.toDouble()
-            allOut += it.aggregations.get<Max>("lastOutNetFlow").valueAsString.toDouble()
+    fun getNetworkInBytes(): MutableMap<String, Any> {
+        val _ss_ = mapOf<String, Any>(
+                "size" to 0,
+                "aggs" to mapOf<String, Any>(
+                        "range" to mapOf<String, Any>(
+                                "date_range" to mapOf(
+                                        "field" to "@timestamp",
+                                        "format" to "yyyy-MM-dd HH:mm:ss",
+                                        "ranges" to listOf(
+                                                mapOf(
+                                                        "from" to "${Date().date2string()} 00:00:00",
+                                                        "to" to "${Date().date2string()} 23:59:59"
+                                                )
+                                        ),
+                                        "time_zone" to "+08:00"
+                                ),
+                                "aggs" to mapOf(
+                                        "network_speed_per_day" to mapOf(
+                                                "date_histogram" to mapOf(
+                                                        "field" to "@timestamp",
+                                                        "interval" to "10m"
+                                                ),
+                                                "aggs" to mapOf(
+                                                        "network_bytes" to mapOf(
+                                                                "max" to mapOf(
+                                                                        "field" to "system.network.in.bytes"
+                                                                )
+                                                        ),
+                                                        "network_bytes_deriv" to mapOf(
+                                                                "derivative" to mapOf(
+                                                                        "buckets_path" to "network_bytes",
+                                                                        "unit" to "1s"
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+        )
+        val res: okhttp3.Response = okHttpClient.newCall(Request.Builder()
+                .header("Content-Type", "application/json")
+                .url("${pros.uris[0]}/metricbeat-*/_search")
+                .post(okhttp3.RequestBody.create(MediaType.parse("application/json"), GsonUtils.convert(_ss_)))
+                .build()).execute()
+        res.header("Content-Type", "application/json")
+        val dataMap = mutableMapOf<String, Any>()
+        if (res.isSuccessful) {
+            val responseBody = res.body()
+            if (responseBody != null) {
+                val result = responseBody.source().readString(Charset.defaultCharset())
+                val jo: JSONObject = JSON.parseObject(result)
+                val jo_buckets: JSONArray = jo.getJSONObject("aggregations").getJSONObject("range").getJSONArray("buckets")
+                if (jo_buckets.size > 0) {
+                    val jo_buckets_childs: JSONArray = jo_buckets.getJSONObject(0).getJSONObject("network_speed_per_day").getJSONArray("buckets")
+                    for (joIndex in 0..jo_buckets_childs.size - 1) {
+                        val joo: JSONObject = jo_buckets_childs.getJSONObject(joIndex)
+                        val xAxis = Date(joo.getLong("key")).datetime2string()
+                        val yAxis = if (joo.contains("network_bytes_deriv")) {
+                            joo.getJSONObject("network_bytes_deriv").getDouble("normalized_value")
+                        } else {
+                            0.0
+                        }
+                        // 将流量单位显示为KB，并格式化保留2位小数
+                        val y = yAxis.toBigDecimal().divide(BigDecimal(1024), 2, BigDecimal.ROUND_HALF_UP)
+                        dataMap.put(xAxis, y.toDouble())
+                    }
+                }
+                responseBody.close()
+            }
         }
+        return dataMap
+    }
 
-        val allFlow = allIn + allOut
-
-        val data = listOf(mapOf(
-                "time" to time,
-                "allIn" to allIn,
-                "allOut" to allOut,
-                "allFlow" to allFlow
-        ))
-
-        return CommonResponse(data)
+    fun getNetworkOutBytes(): MutableMap<String, Any> {
+        val _ss_ = mapOf<String, Any>(
+                "size" to 0,
+                "aggs" to mapOf<String, Any>(
+                        "range" to mapOf<String, Any>(
+                                "date_range" to mapOf(
+                                        "field" to "@timestamp",
+                                        "format" to "yyyy-MM-dd HH:mm:ss",
+                                        "ranges" to listOf(
+                                                mapOf(
+                                                        "from" to "${Date().date2string()} 00:00:00",
+                                                        "to" to "${Date().date2string()} 23:59:59"
+                                                )
+                                        ),
+                                        "time_zone" to "+08:00"
+                                ),
+                                "aggs" to mapOf(
+                                        "network_speed_per_day" to mapOf(
+                                                "date_histogram" to mapOf(
+                                                        "field" to "@timestamp",
+                                                        "interval" to "10m"
+                                                ),
+                                                "aggs" to mapOf(
+                                                        "network_bytes" to mapOf(
+                                                                "max" to mapOf(
+                                                                        "field" to "system.network.out.bytes"
+                                                                )
+                                                        ),
+                                                        "network_bytes_deriv" to mapOf(
+                                                                "derivative" to mapOf(
+                                                                        "buckets_path" to "network_bytes",
+                                                                        "unit" to "1s"
+                                                                )
+                                                        )
+                                                        ,
+                                                        "network_bytes_deriv_negative" to mapOf(
+                                                                "bucket_script" to mapOf(
+                                                                        "buckets_path" to mapOf(
+                                                                                "rate" to "network_bytes_deriv.normalized_value"
+                                                                        ),
+                                                                        "script" to "params.rate != null && params.rate > 0 ? params.rate * -1 : null"
+                                                                )
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                )
+        )
+        val dataMap = mutableMapOf<String, Any>()
+        val res: okhttp3.Response = okHttpClient.newCall(Request.Builder()
+                .header("Content-Type", "application/json")
+                .url("${pros.uris[0]}/metricbeat-*/_search")
+                .post(okhttp3.RequestBody.create(MediaType.parse("application/json"), GsonUtils.convert(_ss_)))
+                .build()).execute()
+        res.header("Content-Type", "application/json")
+        if (res.isSuccessful) {
+            val responseBody = res.body()
+            if (responseBody != null) {
+                val result = responseBody.source().readString(Charset.defaultCharset())
+                val jo: JSONObject = JSON.parseObject(result)
+                val jo_buckets: JSONArray = jo.getJSONObject("aggregations").getJSONObject("range").getJSONArray("buckets")
+                if (jo_buckets.size > 0) {
+                    val jo_buckets_childs: JSONArray = jo_buckets.getJSONObject(0).getJSONObject("network_speed_per_day").getJSONArray("buckets")
+                    for (joIndex in 0..jo_buckets_childs.size - 1) {
+                        val joo: JSONObject = jo_buckets_childs.getJSONObject(joIndex)
+                        val xAxis = Date(joo.getLong("key")).datetime2string()
+                        val yAxis = if (joo.contains("network_bytes_deriv_negative")) {
+                            joo.getJSONObject("network_bytes_deriv_negative").getDouble("value")
+                        } else {
+                            0.0
+                        }
+                        // 将流量单位显示为KB，并格式化保留2位小数
+                        val y = yAxis.toBigDecimal().divide(BigDecimal(1024), 2, BigDecimal.ROUND_HALF_UP)
+                        dataMap.put(xAxis, y.toDouble())
+                    }
+                }
+                responseBody.close()
+            }
+        }
+        return dataMap
     }
 }
 

@@ -101,6 +101,9 @@ object CvsReaderUtils {
         println("开始写入文件.......")
         val expose_time = measureTimeMillis {
             val cvsFile = File(filePath)
+
+            cvsFile.readLines().take(1).takeLast(2)
+
             if (!cvsFile.exists()) {
                 cvsFile.parentFile.mkdirs()
                 cvsFile.createNewFile()

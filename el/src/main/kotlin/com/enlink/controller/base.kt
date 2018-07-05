@@ -1,39 +1,27 @@
 package com.enlink.controller
 
-import com.enlink.config.properties.PathProps
-import com.enlink.dao.DocumentDao
-import com.enlink.dao.IndexDao
+import com.enlink.config.properties.ElasticProps
 import com.enlink.model.*
 import com.enlink.platform.*
-import com.sun.org.apache.xpath.internal.operations.Bool
 import okhttp3.OkHttpClient
 import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.client.RestHighLevelClient
 import org.elasticsearch.common.xcontent.XContentHelper
 import org.elasticsearch.common.xcontent.XContentType
-import org.elasticsearch.index.Index
 import org.elasticsearch.index.query.BoolQueryBuilder
 import org.elasticsearch.index.query.QueryBuilder
 import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.search.aggregations.AggregationBuilder
-import org.elasticsearch.search.aggregations.AggregationBuilders
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.elasticsearch.search.sort.SortOrder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.stereotype.Controller
-import org.springframework.web.bind.annotation.RequestBody
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.stream.Collectors.toMap
-import kotlin.math.log
-import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.superclasses
 import kotlin.system.measureTimeMillis
-import java.util.Locale.CHINESE
-
 
 /**
  * 功能描述：基础Action
@@ -48,6 +36,8 @@ open class BaseController {
     val MAX_AGGR_COUNT = 3000
     // 查询结果最大值，Elasticsearch默认为10000，超出后无法分页
     val MAX_COUNT = 10000
+    @Autowired
+    lateinit var pros: ElasticProps
 
     @Autowired
     lateinit var client: RestHighLevelClient

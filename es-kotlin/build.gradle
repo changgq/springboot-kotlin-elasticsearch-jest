@@ -1,5 +1,5 @@
 buildscript {
-    ext.vKtolin = '1.2.41'
+    ext.vKtolin = '1.2.50'
     ext.vSpringboot = '2.0.1.RELEASE'
     ext.vElasticsearch = '6.2.4'
     ext.vGson = '2.8.5'

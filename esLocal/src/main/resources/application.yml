@@ -1,0 +1,20 @@
+# springboot多环境配置：dev、test、prod，默认：prod；开发环境启动时，设置参数 --spring.profiles.active=dev
+# 启动命令：java -jar *.jar --spring.profiles.active=dev
+spring.profiles.active: prod
+
+# 服务端口及path路径
+server.port: 8081
+server.servlet.path: /eslocal/api/
+
+# 各类日志的保存地址
+system.log.admin: /var/log/administrator_operation.log
+system.log.user: /usr/local/orange/logs/user_login_log.log
+system.log.system: /usr/local/enlink/bin/monitorlog/
+system.log.res: /usr/local/orange/logs/ruleStatistical.log
+
+# 日志分析后结果保存地址
+system.path.root:
+system.path.admin: ${system.path.root}/admin/
+system.path.user: ${system.path.root}/user/
+system.path.system: ${system.path.root}/system/
+system.path.res: ${system.path.root}/res/

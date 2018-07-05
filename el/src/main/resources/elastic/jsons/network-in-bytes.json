@@ -1,0 +1,39 @@
+{
+  "size":0,
+  "aggs":{
+    "range":{
+      "date_range":{
+        "field":"@timestamp",
+        "format":"yyyy-MM-dd HH:mm:ss",
+        "ranges":[
+          {
+            "from":"#from#",
+            "to":"#to#"
+          }
+        ],
+        "time_zone":"+08:00"
+      },
+      "aggs":{
+        "network_speed_per_day":{
+          "date_histogram":{
+            "field":"@timestamp",
+            "interval":"10m"
+          },
+          "aggs":{
+            "network_bytes":{
+              "max":{
+                "field":"system.network.in.bytes"
+              }
+            },
+            "network_bytes_deriv":{
+              "derivative":{
+                "buckets_path":"network_bytes",
+                "unit":"1s"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
