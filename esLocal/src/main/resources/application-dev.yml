@@ -2,6 +2,6 @@ system.path.root: D://Test/eslocal/
 
 # 各类日志的保存地址
 system.log.admin: D://Test/eslocal/administrator_operation.log
-system.log.user:
+system.log.user: D://Test/eslocal/user_login_log.log
 system.log.system: D://Test/eslocal/monitorlog/
 system.log.res: D://Test/eslocal/ruleStatistical.log

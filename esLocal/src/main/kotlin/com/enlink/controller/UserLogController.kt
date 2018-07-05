@@ -21,9 +21,9 @@ open class UserLogController {
 
     @PostMapping("/get")
     fun search(@RequestBody sCondition: UserSearchCondition): CommonResponse {
-        var data = mutableListOf<UserLogs>()
+        var data = Pagers<UserLogs>()
         val exponse_time = measureTimeMillis {
-            data = userLogsGet(sCondition)
+            data = getLogsPaging(sCondition)
         }
         return CommonResponse(data, exponse_time)
     }
@@ -35,8 +35,20 @@ open class UserLogController {
             val adminMaps = userLogsGet(sCondition)
             userGroups = adminMaps.stream().map(UserLogs::userGroup).distinct().collect(Collectors.toList())
         }
-        println(userGroups)
         return CommonResponse(userGroups, exposeTimes)
+    }
+
+    /**
+     * 功能说明：分页
+     */
+    fun getLogsPaging(sCondition: UserSearchCondition): Pagers<UserLogs> {
+        val pagers = Pagers<UserLogs>(0, sCondition.pageSize, sCondition.currentPage)
+        val logs = userLogsGet(sCondition)
+        val startIndex = (sCondition.currentPage - 1) * sCondition.pageSize
+        val endIndex = sCondition.currentPage * sCondition.pageSize
+        pagers.total = logs.size
+        pagers.data = logs.subList(if (startIndex < logs.size) startIndex else 0, if (endIndex < logs.size) endIndex else (logs.size))
+        return pagers
     }
 
 
@@ -48,12 +60,46 @@ open class UserLogController {
         if (!sCondition.logDate.date2string().equals(Date().date2string())) {
             af = File(systemLogProperties.user)
         }
-        val userLogs = mutableListOf<UserLogs>()
+        var userLogs = mutableListOf<UserLogs>()
         if (af.exists()) {
             val lines = af.readLines()
-            for (line in lines) {
-                val al = line.split("|")
-                userLogs.add(UserLogs(al[0], al[1], al[2], al[3], al[4], al[5], al[6], al[7], al[8], al[9], al[10], al[11], al[12], al[13], al[14], al[15]))
+            var data = mutableListOf<UserLogs>()
+            for (x in lines) {
+                if (x.isNotBlank()) {
+                    val logArrays = x.split("|")
+                    val ul = UserLogs(logArrays[0].trim(),
+                            logArrays[1].trim(),
+                            logArrays[2].trim(),
+                            logArrays[3].trim(),
+                            logArrays[4].trim(),
+                            logArrays[5].trim(),
+                            logArrays[6].trim(),
+                            logArrays[7].trim(),
+                            logArrays[8].trim(),
+                            logArrays[9].trim(),
+                            logArrays[10].trim(),
+                            logArrays[11].trim(),
+                            logArrays[12].trim(),
+                            logArrays[13].trim(),
+                            logArrays[14].trim(),
+                            logArrays[15].trim())
+                    var isChecked = true
+                    if (sCondition.logInfo.isNotBlank() && ul.logInfo.isNotBlank()) {
+                        isChecked = ul.logInfo.startsWith(sCondition.logInfo)
+                    }
+                    if (sCondition.logLevel.isNotBlank()) {
+                        isChecked = sCondition.logLevel.equals(ul.logLevel)
+                    }
+                    if (sCondition.userName.isNotBlank()) {
+                        isChecked = sCondition.userName.equals(ul.userName)
+                    }
+                    if (sCondition.userGroup.isNotBlank()) {
+                        isChecked = sCondition.userGroup.equals(ul.userGroup)
+                    }
+                    if (isChecked) {
+                        userLogs.add(ul)
+                    }
+                }
             }
         }
         return userLogs
@@ -78,4 +124,10 @@ data class UserLogs(
         val clientInfo: String,
         val macAddress: String)
 
-class UserSearchCondition(val logDate: Date, val userName: String = "", val userGroup: String = "", val logLevel: String = "", val logInfo: String = "")
+class UserSearchCondition(val logDate: Date,
+                          val userName: String = "",
+                          val userGroup: String = "",
+                          val logLevel: String = "",
+                          val logInfo: String = "",
+                          val currentPage: Int = 1,
+                          val pageSize: Int = 10)
